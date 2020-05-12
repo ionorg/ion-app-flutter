@@ -20,4 +20,4 @@ Make sure your flutter is using the `dev` channel.
 
 ### iOS/Android
 
-<img width="180" height="370" src=".github/screenshots/flutter/flutter-01.jpg"/> <img width="180" height="370" src=".github/screenshots/flutter/flutter-02.jpg"/> <img width="180" height="370" src=".github/screenshots/flutter/flutter-03.jpg"/>
+<img width="180" height="370" src="./.github/screenshots/flutter-01.jpg"/> <img width="180" height="370" src="./.github/screenshots/flutter-02.jpg"/> <img width="180" height="370" src="./.github/screenshots/flutter-03.jpg"/>
