@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:date_format/date_format.dart';
 import 'chat_message.dart';
-import '../utils/random_string.dart';
 import 'package:flutter_ion/flutter_ion.dart';
 
 class ChatPage extends StatefulWidget {
@@ -43,12 +42,9 @@ class ChatPageState extends State<ChatPage>{
         var hisMsg = _historyMessage[i];
 
         ChatMessage message = ChatMessage(
-          randomNumeric(6),
           hisMsg['text'],
           hisMsg['name'],
-          hisMsg['from'],
           formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
-          hisMsg['session_id'],
         );
         _messages.insert(
             0,
@@ -64,12 +60,9 @@ class ChatPageState extends State<ChatPage>{
   void _messageProcess(rid, uid, info) async {
     print('message: ' + info.toString());
     ChatMessage message = ChatMessage(
-        randomNumeric(6),
         info['msg'],
         info['senderName'],
-        uid,
         formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
-        uid
     );
 
     _messages.insert(0, message);
@@ -84,7 +77,6 @@ class ChatPageState extends State<ChatPage>{
     print('Dispose chat widget!');
 
     _messages = <ChatMessage>[];
-
     super.dispose();
   }
 
@@ -103,12 +95,9 @@ class ChatPageState extends State<ChatPage>{
     this.client.broadcast(_room,info);
 
     var msg = ChatMessage(
-      randomNumeric(6),
       text,
       this._displayName,
-      this._displayName,
       formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
-      'Me',
     );
     msg.isMe = true;
     _messages.insert(0, msg);
@@ -175,5 +164,4 @@ class ChatPageState extends State<ChatPage>{
       ),
     );
   }
-
 }
