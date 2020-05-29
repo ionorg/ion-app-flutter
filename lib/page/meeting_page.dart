@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/webrtc.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../widget/video_render_adapter.dart';
-import '../helper/ion_helper.dart';
-import './chat_page.dart';
+import 'package:ion/widget/video_render_adapter.dart';
+import 'package:ion/helper/ion_helper.dart';
+import 'package:ion/page/chat_page.dart';
 
 class MeetingPage extends StatefulWidget {
   final IonHelper _helper;

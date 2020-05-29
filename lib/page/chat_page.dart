@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:date_format/date_format.dart';
-import 'chat_message.dart';
+import 'package:ion/page/chat_message.dart';
 import 'package:flutter_ion/flutter_ion.dart';
 
 class ChatPage extends StatefulWidget {

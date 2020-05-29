@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-
-import 'helper/ion_helper.dart';
-import 'page/settings_page.dart';
-import 'page/login_page.dart';
-import 'page/meeting_page.dart';
-import 'utils/utils.dart';
+import 'package:ion/helper/ion_helper.dart';
+import 'package:ion/page/settings_page.dart';
+import 'package:ion/page/login_page.dart';
+import 'package:ion/page/meeting_page.dart';
+import 'package:ion/utils/utils.dart';
 
 void main() => runApp(MyApp());
 

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../helper/ion_helper.dart';
-import '../utils/utils.dart';
+import 'package:ion/helper/ion_helper.dart';
+import 'package:ion/utils/utils.dart';
 
 class LoginPage extends StatefulWidget {
   final IonHelper _helper;
