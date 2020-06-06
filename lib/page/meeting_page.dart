@@ -5,8 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ion/widget/video_render_adapter.dart';
 import 'package:ion/helper/ion_helper.dart';
 import 'package:ion/page/chat_page.dart';
-import 'package:ion/page/chat_message.dart';
-import 'package:date_format/date_format.dart';
 
 class MeetingPage extends StatefulWidget {
   final IonHelper _helper;
@@ -23,7 +21,7 @@ class _MeetingPageState extends State<MeetingPage> {
   bool _cameraOff = false;
   bool _microphoneOff = false;
   bool _speakerOn = true;
-  var _scaffoldkey = new GlobalKey<ScaffoldState>();
+  var _scaffoldkey = GlobalKey<ScaffoldState>();
   var _messages = [];
   var name;
   var room;
@@ -188,7 +186,7 @@ class _MeetingPageState extends State<MeetingPage> {
   }
 
   List<Widget> _buildVideoViews() {
-    List<Widget> views = new List<Widget>();
+    List<Widget> views = List<Widget>();
     if (_remoteVideos.length > 1)
       _remoteVideos.getRange(1, _remoteVideos.length).forEach((adapter) {
         adapter.objectFit = RTCVideoViewObjectFit.RTCVideoViewObjectFitCover;
@@ -554,6 +552,7 @@ class _MeetingPageState extends State<MeetingPage> {
                                     size: 28.0,
                                     color: Colors.white,
                                   ),
+                                  onPressed: (){},
                                 ),
                                 //Chat message
                                 IconButton(
