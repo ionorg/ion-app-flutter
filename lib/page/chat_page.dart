@@ -45,6 +45,7 @@ class ChatPageState extends State<ChatPage>{
           hisMsg['text'],
           hisMsg['name'],
           formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
+          hisMsg['name'] == _displayName ? true :false,
         );
         _messages.insert(
             0,
@@ -63,6 +64,7 @@ class ChatPageState extends State<ChatPage>{
         info['msg'],
         info['senderName'],
         formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
+        info['senderName'] == _displayName ? true :false,
     );
 
     _messages.insert(0, message);
@@ -98,8 +100,8 @@ class ChatPageState extends State<ChatPage>{
       text,
       this._displayName,
       formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
+      true,
     );
-    msg.isMe = true;
     _messages.insert(0, msg);
     setState(() {
       _messages = _messages;

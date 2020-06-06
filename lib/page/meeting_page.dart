@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ion/widget/video_render_adapter.dart';
 import 'package:ion/helper/ion_helper.dart';
 import 'package:ion/page/chat_page.dart';
+import 'package:ion/page/chat_message.dart';
+import 'package:date_format/date_format.dart';
 
 class MeetingPage extends StatefulWidget {
   final IonHelper _helper;
@@ -69,6 +71,17 @@ class _MeetingPageState extends State<MeetingPage> {
         });
       }
       this._showSnackBar(":::stream-remove [$mid]:::");
+    });
+
+    client.on('broadcast', (rid, uid, info) async {
+      print('message: ' + info.toString());
+      _messages.add({
+        "name":info['senderName'],
+        "text":info['msg']
+      });
+      this.setState((){
+        _messages = _messages;
+      });
     });
 
 
