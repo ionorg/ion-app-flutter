@@ -355,8 +355,9 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            MaterialCommunityIcons.getIconData(
-                _cameraOff ? "video-off" : "video"),
+            _cameraOff
+                ? MaterialCommunityIcons.video_off
+                : MaterialCommunityIcons.video,
             color: _cameraOff ? Colors.red : Colors.white,
           ),
           onPressed: _turnCamera,
@@ -373,7 +374,7 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            MaterialCommunityIcons.getIconData("video-switch"),
+            MaterialCommunityIcons.video_switch,
             color: Colors.white,
           ),
           onPressed: _switchCamera,
@@ -390,8 +391,7 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            MaterialCommunityIcons.getIconData(
-                _microphoneOff ? "microphone-off" : "microphone"),
+            _microphoneOff ? MaterialCommunityIcons.microphone_off : MaterialCommunityIcons.microphone,
             color: _microphoneOff ? Colors.red : Colors.white,
           ),
           onPressed: _turnMicrophone,
@@ -408,8 +408,7 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            MaterialIcons.getIconData(
-                _speakerOn ? "volume-up" : "speaker-phone"),
+            _speakerOn ? MaterialIcons.volume_up : MaterialIcons.speaker_phone,
             color: Colors.white,
           ),
           onPressed: _switchSpeaker,
@@ -426,7 +425,7 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            MaterialCommunityIcons.getIconData("phone-hangup"),
+            MaterialCommunityIcons.phone_hangup,
             color: Colors.red,
           ),
           onPressed: _hangUp,
