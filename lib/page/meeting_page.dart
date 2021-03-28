@@ -391,7 +391,9 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            _microphoneOff ? MaterialCommunityIcons.microphone_off : MaterialCommunityIcons.microphone,
+            _microphoneOff
+                ? MaterialCommunityIcons.microphone_off
+                : MaterialCommunityIcons.microphone,
             color: _microphoneOff ? Colors.red : Colors.white,
           ),
           onPressed: _turnMicrophone,
