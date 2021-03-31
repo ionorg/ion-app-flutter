@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:date_format/date_format.dart';
+import 'package:ion/helper/ion_helper.dart';
 import 'package:ion/page/chat_message.dart';
 import 'package:flutter_ion/flutter_ion.dart';
 
 class ChatPage extends StatefulWidget {
-
-  Client client;
+  IonHelper _helper;
   var _historyMessage = [];
   String _displayName;
   String _room;
 
-  ChatPage(this.client, this._historyMessage, this._displayName,this._room);
+  ChatPage(this._helper, this._historyMessage, this._displayName, this._room);
 
   @override
   State createState() => ChatPageState();
 }
 
-class ChatPageState extends State<ChatPage>{
-
-  Client client;
+class ChatPageState extends State<ChatPage> {
+  IonHelper _helper;
   var _historyMessage = [];
 
   String _displayName = "";
-  String _room = "";
+  String _sid = "";
 
   final TextEditingController textEditingController = TextEditingController();
   List<ChatMessage> _messages = <ChatMessage>[];
@@ -32,12 +31,12 @@ class ChatPageState extends State<ChatPage>{
   void initState() {
     super.initState();
 
-    client = widget.client;
+    _helper = widget._helper;
     _historyMessage = widget._historyMessage;
     _displayName = widget._displayName;
-    _room = widget._room;
+    _sid = widget._room;
 
-    if (client != null) {
+    if (_helper != null) {
       for (int i = 0; i < _historyMessage.length; i++) {
         var hisMsg = _historyMessage[i];
 
@@ -46,30 +45,27 @@ class ChatPageState extends State<ChatPage>{
           hisMsg['name'],
           formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
         );
-        _messages.insert(
-            0,
-            message);
+        _messages.insert(0, message);
       }
       setState(() {
         _messages = _messages;
       });
-      client.on('broadcast', _messageProcess);
+      _helper.ion.onMessage = _messageProcess;
     }
   }
 
-  void _messageProcess(rid, uid, info) async {
-    print('message: ' + info.toString());
+  void _messageProcess(Message msg) async {
+    print('message: ' + msg.data.toString());
     ChatMessage message = ChatMessage(
-        info['msg'],
-        info['senderName'],
-        formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
+      msg.data['msg'],
+      msg.data['senderName'],
+      formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
     );
 
     _messages.insert(0, message);
     setState(() {
       _messages = _messages;
     });
-
   }
 
   @override
@@ -87,12 +83,12 @@ class ChatPageState extends State<ChatPage>{
       return;
     }
 
-    var info =  {
-      "senderName":_displayName,
+    var info = {
+      "senderName": _displayName,
       "msg": text,
     };
 
-    this.client.broadcast(_room,info);
+    _helper.ion.message(_helper.uid, _sid, info);
 
     var msg = ChatMessage(
       text,
@@ -115,7 +111,8 @@ class ChatPageState extends State<ChatPage>{
           children: <Widget>[
             Flexible(
               child: TextField(
-                decoration: InputDecoration.collapsed(hintText: 'Please input message'),
+                decoration:
+                    InputDecoration.collapsed(hintText: 'Please input message'),
                 controller: textEditingController,
                 onSubmitted: _handleSubmit,
                 focusNode: textFocusNode,

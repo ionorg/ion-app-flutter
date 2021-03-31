@@ -1,12 +1,11 @@
-import 'package:flutter_webrtc/webrtc.dart';
-import 'package:flutter_ion/flutter_ion.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 class VideoRendererAdapter {
   String _mid;
   String _sid;
   bool _local;
   RTCVideoRenderer _renderer;
-  Stream _stream;
+  MediaStream _stream;
   RTCVideoViewObjectFit _objectFit =
       RTCVideoViewObjectFit.RTCVideoViewObjectFitContain;
   VideoRendererAdapter(this._mid, this._stream, this._local, [this._sid]);
@@ -16,11 +15,9 @@ class VideoRendererAdapter {
       _renderer = new RTCVideoRenderer();
       await _renderer.initialize();
     }
-    _renderer.srcObject = _stream.stream;
+    _renderer.srcObject = _stream;
     if (_local) {
       _objectFit = RTCVideoViewObjectFit.RTCVideoViewObjectFitCover;
-      _renderer.mirror = true;
-      _renderer.objectFit = _objectFit;
     }
   }
 
@@ -29,16 +26,11 @@ class VideoRendererAdapter {
         (_objectFit == RTCVideoViewObjectFit.RTCVideoViewObjectFitContain)
             ? RTCVideoViewObjectFit.RTCVideoViewObjectFitCover
             : RTCVideoViewObjectFit.RTCVideoViewObjectFitContain;
-    _renderer.objectFit = _objectFit;
   }
 
   set objectFit(RTCVideoViewObjectFit objectFit) {
     _objectFit = objectFit;
-    if (this._renderer != null) {
-      _renderer.objectFit = _objectFit;
-    }
   }
-
 
   dispose() async {
     if (_renderer != null) {
@@ -57,5 +49,5 @@ class VideoRendererAdapter {
 
   get renderer => _renderer;
 
-  get stream => _stream.stream;
+  get stream => _stream;
 }

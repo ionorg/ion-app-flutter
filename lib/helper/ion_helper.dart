@@ -1,37 +1,44 @@
 import 'package:events2/events2.dart';
 import 'package:flutter_ion/flutter_ion.dart';
+import 'package:uuid/uuid.dart';
 
 class IonHelper extends EventEmitter {
-  Client _client;
-  String _rid;
+  IonConnector _ion;
+  String _sid;
+  final String _uid = Uuid().v4();
 
-  get client => _client;
+  IonConnector get ion => _ion;
 
-  get roomId => _rid;
+  String get sid => _sid;
+
+  String get uid => _uid;
+
+  Client get sfu => _ion.sfu;
 
   connect(host) async {
-    if (_client == null) {
-      var url = 'https://$host:8443/ws';
-      _client = Client(url);
-
-      _client.on('transport-open', () {
-        this.emit('transport-open');
-      });
+    if (_ion == null) {
+      var url = 'http://$host:5551';
+      _ion = new IonConnector(url: url);
     }
 
-    await _client.connect();
+    _ion.onJoin = (bool success, String reason) {
+      emit('handle-join', success, reason);
+    };
+
+    _ion.onLeave = (String reason) {
+      emit('handle-leave', reason);
+    };
   }
 
-  join(String roomId, String displayName) async {
-    this._rid = roomId;
-    await _client.join(roomId, {'name': '$displayName'});
+  join(String sid, String displayName) async {
+    _sid = sid;
+    _ion.join(sid: _sid, uid: _uid, info: {'name': '$displayName'});
   }
 
   close() async {
-    if (_client != null) {
-      await _client.leave();
-      _client.close();
-      _client = null;
+    if (_ion != null) {
+      _ion.leave(_uid);
+      _ion.close();
     }
   }
 }

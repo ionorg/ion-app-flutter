@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_webrtc/webrtc.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:flutter_ion/flutter_ion.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ion/widget/video_render_adapter.dart';
@@ -15,8 +16,9 @@ class MeetingPage extends StatefulWidget {
 
 class _MeetingPageState extends State<MeetingPage> {
   SharedPreferences prefs;
-  List<VideoRendererAdapter> _remoteVideos = List();
+  List<VideoRendererAdapter> _remoteVideos = <VideoRendererAdapter>[];
   VideoRendererAdapter _localVideo;
+  LocalStream _localStream;
 
   bool _cameraOff = false;
   bool _microphoneOff = false;
@@ -38,80 +40,95 @@ class _MeetingPageState extends State<MeetingPage> {
   init() async {
     prefs = await SharedPreferences.getInstance();
     var helper = widget._helper;
-    var client = widget._helper.client;
+    IonConnector ion = widget._helper.ion;
 
-    client.on('peer-join', (rid, id, info) async {
-      var name = info['name'];
-      this._showSnackBar(":::Peer [$id:$name] join:::");
-    });
+    ion.onJoin = (bool success, String reason) {
+      this._showSnackBar(":::Join success:::");
+    };
 
-    client.on('peer-leave', (rid, id) async {
-      this._showSnackBar(":::Peer [$id] leave:::");
-    });
+    ion.onPeerEvent = (PeerEvent event) {
+      var name = event.peer.info['name'];
+      var state = '';
+      switch (event.state) {
+        case PeerState.NONE:
+          break;
+        case PeerState.JOIN:
+          state = 'join';
+          break;
+        case PeerState.UPDATE:
+          state = 'upate';
+          break;
+        case PeerState.LEAVE:
+          state = 'leave';
+          break;
+      }
+      this._showSnackBar(":::Peer [${event.peer.uid}:$name] $state:::");
+    };
 
-    client.on('stream-add', (rid, mid, info, tracks) async {
-      var bandwidth = prefs.getString('bandwidth') ?? '512';
-      var stream = await client.subscribe(rid, mid, tracks, bandwidth);
-      var adapter = VideoRendererAdapter(stream.mid, stream, false, mid);
+    ion.onStreamEvent = (StreamEvent event) async {
+      var mid = event.streams[0].id;
+      switch (event.state) {
+        case StreamState.NONE:
+          break;
+        case StreamState.ADD:
+          this._showSnackBar(":::stream-add [$mid]:::");
+          break;
+        case StreamState.REMOVE:
+          this._showSnackBar(":::stream-remove [$mid]:::");
+          var adapter = _remoteVideos.firstWhere((item) => item.sid == mid);
+          if (adapter != null) {
+            await adapter.dispose();
+            this.setState(() {
+              _remoteVideos.remove(adapter);
+            });
+          }
+          break;
+      }
+    };
+
+    ion.onTrack = (MediaStreamTrack track, RemoteStream stream) async {
+      var mid = stream.id;
+      var adapter = VideoRendererAdapter(stream.id, stream.stream, false, mid);
       await adapter.setupSrcObject();
       this.setState(() {
         _remoteVideos.add(adapter);
       });
-      this._showSnackBar(":::stream-add [$mid]:::");
-    });
-
-    client.on('stream-remove', (rid, mid) async {
-      var adapter = _remoteVideos.firstWhere((item) => item.sid == mid);
-      if (adapter != null) {
-        await adapter.dispose();
-        this.setState(() {
-          _remoteVideos.remove(adapter);
-        });
-      }
-      this._showSnackBar(":::stream-remove [$mid]:::");
-    });
-
+    };
 
     name = prefs.getString('display_name') ?? 'Guest';
     room = prefs.getString('room') ?? 'room1';
 
     helper.join(room, name);
     try {
-      var resolution = prefs.getString('resolution') ?? 'vga';
-      var bandwidth = prefs.getString('bandwidth') ?? '512';
-      var codec = prefs.getString('codec') ?? 'vp8';
-      client
-          .publish(true, true, false, codec, bandwidth, resolution)
-          .then((stream) async {
-        var adapter = VideoRendererAdapter(stream.mid, stream, true);
-        await adapter.setupSrcObject();
-        var localStream = stream.stream;
-        MediaStreamTrack audioTrack = localStream.getAudioTracks()[0];
-        audioTrack.enableSpeakerphone(true);
-        this.setState(() {
-          _localVideo = adapter;
-        });
+      _localStream = await LocalStream.getUserMedia(
+          constraints: Constraints.defaults..simulcast = false);
+      ion.sfu.publish(_localStream);
+      var adapter = VideoRendererAdapter(
+          _localStream.stream.id, _localStream.stream, true);
+      await adapter.setupSrcObject();
+      var stream = _localStream.stream;
+      MediaStreamTrack audioTrack = stream.getAudioTracks()[0];
+      audioTrack.enableSpeakerphone(true);
+      this.setState(() {
+        _localVideo = adapter;
       });
     } catch (error) {}
   }
 
   _cleanUp() async {
     var helper = widget._helper;
-    var rid = helper.roomId;
-    var client = helper.client;
+    var ion = helper.ion;
 
     if (_localVideo != null) {
       // stop local video
-      var stream = _localVideo.stream;
-      await client.unpublish(_localVideo.mid);
-      await stream.dispose();
+      await _localStream.unpublish();
       _localVideo = null;
     }
 
     _remoteVideos.forEach((item) async {
       var stream = item.stream;
       try {
-        await client.unsubscribe(rid, item.mid);
+        ion.sfu.close();
         await stream.dispose();
       } catch (error) {}
     });
@@ -553,15 +570,17 @@ class _MeetingPageState extends State<MeetingPage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => ChatPage(widget._helper.client,
-                                            this._messages, this.name,this.room),
+                                        builder: (context) => ChatPage(
+                                            widget._helper,
+                                            this._messages,
+                                            this.name,
+                                            this.room),
                                       ),
                                     );
                                   },
                                 ),
                               ],
                             ),
-
                           ],
                         ),
                       ),

@@ -13,7 +13,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   String _server;
-  String _roomID;
+  String _sid;
   SharedPreferences prefs;
 
   @override
@@ -23,24 +23,20 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   init() async {
-    IonHelper helper = widget._helper;
     prefs = await SharedPreferences.getInstance();
     setState(() {
       _server = prefs.getString('server') ?? 'pionion.org';
-      _roomID = prefs.getString('room') ?? 'room1';
-    });
-
-    helper.on('transport-open', () {
-      Navigator.pushNamed(context, '/meeting');
+      _sid = prefs.getString('room') ?? 'room1';
     });
   }
 
   handleJoin() async {
     IonHelper helper = widget._helper;
     prefs.setString('server', _server);
-    prefs.setString('room', _roomID);
+    prefs.setString('room', _sid);
     prefs.commit();
     helper.connect(_server);
+    Navigator.pushNamed(context, '/meeting');
   }
 
   Widget buildJoinView(context) {
@@ -82,19 +78,19 @@ class _LoginPageState extends State<LoginPage> {
                         contentPadding: EdgeInsets.all(10.0),
                         border: UnderlineInputBorder(
                             borderSide: BorderSide(color: Colors.black12)),
-                        hintText: _roomID ?? 'Enter RoomID.',
+                        hintText: _sid ?? 'Enter RoomID.',
                       ),
                       onChanged: (value) {
                         setState(() {
-                          _roomID = value;
+                          _sid = value;
                         });
                       },
                       controller:
                           TextEditingController.fromValue(TextEditingValue(
-                        text: '${this._roomID == null ? "" : this._roomID}',
+                        text: '${this._sid == null ? "" : this._sid}',
                         selection: TextSelection.fromPosition(TextPosition(
                             affinity: TextAffinity.downstream,
-                            offset: '${this._roomID}'.length)),
+                            offset: '${this._sid}'.length)),
                       )))),
               SizedBox(width: 260.0, height: 48.0),
               InkWell(
@@ -119,9 +115,9 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 onTap: () {
-                  if (_roomID != null) {
+                  if (_sid != null) {
                     handleJoin();
-                    prefs.setString('room', _roomID);
+                    prefs.setString('room', _sid);
                     return;
                   }
                   showDialog<Null>(
