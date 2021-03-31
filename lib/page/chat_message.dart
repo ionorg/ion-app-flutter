@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 class ChatMessage extends StatelessWidget {
-  bool isMe = false;
+  bool _isMe = false;
   String _text;
   String _name;
   String _createAt;
 
-  ChatMessage(this._text, this._name, this._createAt);
+  ChatMessage(this._text, this._name, this._createAt,this._isMe);
 
   @override
   Widget build(BuildContext context) {
-    if(isMe){
+    if(_isMe){
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 10.0),
         child: Row(

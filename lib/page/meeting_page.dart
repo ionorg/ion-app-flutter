@@ -23,7 +23,7 @@ class _MeetingPageState extends State<MeetingPage> {
   bool _cameraOff = false;
   bool _microphoneOff = false;
   bool _speakerOn = true;
-  var _scaffoldkey = new GlobalKey<ScaffoldState>();
+  var _scaffoldkey = GlobalKey<ScaffoldState>();
   var _messages = [];
   var name;
   var room;
@@ -87,12 +87,15 @@ class _MeetingPageState extends State<MeetingPage> {
     };
 
     ion.onTrack = (MediaStreamTrack track, RemoteStream stream) async {
-      var mid = stream.id;
-      var adapter = VideoRendererAdapter(stream.id, stream.stream, false, mid);
-      await adapter.setupSrcObject();
-      this.setState(() {
-        _remoteVideos.add(adapter);
-      });
+      if (track.kind == 'video') {
+        var mid = stream.id;
+        var adapter =
+            VideoRendererAdapter(stream.id, stream.stream, false, mid);
+        await adapter.setupSrcObject();
+        this.setState(() {
+          _remoteVideos.add(adapter);
+        });
+      }
     };
 
     name = prefs.getString('display_name') ?? 'Guest';
@@ -106,9 +109,6 @@ class _MeetingPageState extends State<MeetingPage> {
       var adapter = VideoRendererAdapter(
           _localStream.stream.id, _localStream.stream, true);
       await adapter.setupSrcObject();
-      var stream = _localStream.stream;
-      MediaStreamTrack audioTrack = stream.getAudioTracks()[0];
-      audioTrack.enableSpeakerphone(true);
       this.setState(() {
         _localVideo = adapter;
       });
@@ -192,7 +192,7 @@ class _MeetingPageState extends State<MeetingPage> {
   }
 
   List<Widget> _buildVideoViews() {
-    List<Widget> views = new List<Widget>();
+    List<Widget> views = <Widget>[];
     if (_remoteVideos.length > 1)
       _remoteVideos.getRange(1, _remoteVideos.length).forEach((adapter) {
         adapter.objectFit = RTCVideoViewObjectFit.RTCVideoViewObjectFitCover;
@@ -290,13 +290,13 @@ class _MeetingPageState extends State<MeetingPage> {
                 title: Text("Hangup"),
                 content: Text("Are you sure to leave the room?"),
                 actions: <Widget>[
-                  FlatButton(
+                  TextButton(
                     child: Text("Cancel"),
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
                   ),
-                  FlatButton(
+                  TextButton(
                     child: Text(
                       "Hangup",
                       style: TextStyle(color: Colors.red),
@@ -361,8 +361,9 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            MaterialCommunityIcons.getIconData(
-                _cameraOff ? "video-off" : "video"),
+            _cameraOff
+                ? MaterialCommunityIcons.getIconData('video-off')
+                : MaterialCommunityIcons.getIconData('video'),
             color: _cameraOff ? Colors.red : Colors.white,
           ),
           onPressed: _turnCamera,
@@ -379,7 +380,7 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            MaterialCommunityIcons.getIconData("video-switch"),
+            MaterialCommunityIcons.getIconData('video-switch'),
             color: Colors.white,
           ),
           onPressed: _switchCamera,
@@ -396,8 +397,9 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            MaterialCommunityIcons.getIconData(
-                _microphoneOff ? "microphone-off" : "microphone"),
+            _microphoneOff
+                ? MaterialCommunityIcons.getIconData('microphone-off')
+                : MaterialCommunityIcons.getIconData('microphone'),
             color: _microphoneOff ? Colors.red : Colors.white,
           ),
           onPressed: _turnMicrophone,
@@ -414,8 +416,9 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            MaterialIcons.getIconData(
-                _speakerOn ? "volume-up" : "speaker-phone"),
+            _speakerOn
+                ? MaterialIcons.getIconData('volume-up')
+                : MaterialIcons.getIconData('speaker-phone'),
             color: Colors.white,
           ),
           onPressed: _switchSpeaker,
@@ -432,7 +435,7 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            MaterialCommunityIcons.getIconData("phone-hangup"),
+            MaterialCommunityIcons.getIconData('phone-hangup'),
             color: Colors.red,
           ),
           onPressed: _hangUp,
@@ -558,6 +561,7 @@ class _MeetingPageState extends State<MeetingPage> {
                                     size: 28.0,
                                     color: Colors.white,
                                   ),
+                                  onPressed: () {},
                                 ),
                                 //Chat message
                                 IconButton(
