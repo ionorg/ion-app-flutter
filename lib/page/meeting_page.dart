@@ -46,6 +46,10 @@ class _MeetingPageState extends State<MeetingPage> {
       this._showSnackBar(":::Join success:::");
     };
 
+    ion.onLeave = (String reason) {
+      this._showSnackBar(":::Leave success:::");
+    };
+
     ion.onPeerEvent = (PeerEvent event) {
       var name = event.peer.info['name'];
       var state = '';
@@ -120,7 +124,6 @@ class _MeetingPageState extends State<MeetingPage> {
     var ion = helper.ion;
 
     if (_localVideo != null) {
-      // stop local video
       await _localStream.unpublish();
       _localVideo = null;
     }

@@ -20,14 +20,6 @@ class IonHelper extends EventEmitter {
       var url = 'http://$host:5551';
       _ion = new IonConnector(url: url);
     }
-
-    _ion.onJoin = (bool success, String reason) {
-      emit('handle-join', success, reason);
-    };
-
-    _ion.onLeave = (String reason) {
-      emit('handle-leave', reason);
-    };
   }
 
   join(String sid, String displayName) async {
