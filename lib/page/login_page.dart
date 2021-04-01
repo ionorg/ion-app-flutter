@@ -5,16 +5,16 @@ import 'package:ion/utils/utils.dart';
 
 class LoginPage extends StatefulWidget {
   final IonHelper _helper;
-  LoginPage(this._helper, {Key key, this.title}) : super(key: key);
-  final String title;
+  LoginPage(this._helper, {Key? key, this.title}) : super(key: key);
+  final String? title;
   @override
   _LoginPageState createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  String _server;
-  String _sid;
-  SharedPreferences prefs;
+  String? _server;
+  String? _sid;
+  late SharedPreferences prefs;
 
   @override
   initState() {
@@ -32,8 +32,8 @@ class _LoginPageState extends State<LoginPage> {
 
   handleJoin() async {
     IonHelper helper = widget._helper;
-    prefs.setString('server', _server);
-    prefs.setString('room', _sid);
+    prefs.setString('server', _server!);
+    prefs.setString('room', _sid!);
     prefs.commit();
     helper.connect(_server);
     Navigator.pushNamed(context, '/meeting');
@@ -117,7 +117,7 @@ class _LoginPageState extends State<LoginPage> {
                 onTap: () {
                   if (_sid != null) {
                     handleJoin();
-                    prefs.setString('room', _sid);
+                    prefs.setString('room', _sid!);
                     return;
                   }
                   showDialog<Null>(
@@ -128,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
                         title: Text('Client id is empty'),
                         content: Text('Please enter Ion room id!'),
                         actions: <Widget>[
-                          FlatButton(
+                          TextButton(
                             child: Text('Ok'),
                             onPressed: () {
                               Navigator.of(context).pop();
@@ -157,7 +157,7 @@ class _LoginPageState extends State<LoginPage> {
             Positioned(
               bottom: 6.0,
               right: 6.0,
-              child: FlatButton(
+              child: TextButton(
                 onPressed: () {
                   Navigator.pushNamed(context, '/settings');
                 },

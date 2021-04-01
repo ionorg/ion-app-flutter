@@ -17,7 +17,7 @@ class ChatPage extends StatefulWidget {
 }
 
 class ChatPageState extends State<ChatPage> {
-  IonHelper _helper;
+  IonHelper? _helper;
   var _historyMessage = [];
 
   String _displayName = "";
@@ -51,7 +51,7 @@ class ChatPageState extends State<ChatPage> {
       setState(() {
         _messages = _messages;
       });
-      _helper.ion.onMessage = _messageProcess;
+      _helper?.ion?.onMessage = _messageProcess;
     }
   }
 
@@ -91,7 +91,7 @@ class ChatPageState extends State<ChatPage> {
       "msg": text,
     };
 
-    _helper.ion.message(_helper.uid, _sid, info);
+    _helper?.ion?.message(_helper!.uid, _sid, info);
 
     var msg = ChatMessage(
       text,

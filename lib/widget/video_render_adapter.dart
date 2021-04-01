@@ -2,20 +2,19 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 class VideoRendererAdapter {
   String _mid;
-  String _sid;
   bool _local;
-  RTCVideoRenderer _renderer;
+  RTCVideoRenderer? _renderer;
   MediaStream _stream;
   RTCVideoViewObjectFit _objectFit =
       RTCVideoViewObjectFit.RTCVideoViewObjectFitContain;
-  VideoRendererAdapter(this._mid, this._stream, this._local, [this._sid]);
+  VideoRendererAdapter(this._mid, this._stream, this._local);
 
   setupSrcObject() async {
     if (_renderer == null) {
       _renderer = new RTCVideoRenderer();
-      await _renderer.initialize();
+      await _renderer?.initialize();
     }
-    _renderer.srcObject = _stream;
+    _renderer?.srcObject = _stream;
     if (_local) {
       _objectFit = RTCVideoViewObjectFit.RTCVideoViewObjectFitCover;
     }
@@ -34,9 +33,9 @@ class VideoRendererAdapter {
 
   dispose() async {
     if (_renderer != null) {
-      print('dispose for texture id ' + _renderer.textureId.toString());
-      _renderer.srcObject = null;
-      await _renderer.dispose();
+      print('dispose for texture id ' + _renderer!.textureId.toString());
+      _renderer?.srcObject = null;
+      await _renderer?.dispose();
       _renderer = null;
     }
   }
@@ -44,8 +43,6 @@ class VideoRendererAdapter {
   get local => _local;
 
   get mid => _mid;
-
-  get sid => _sid;
 
   get renderer => _renderer;
 

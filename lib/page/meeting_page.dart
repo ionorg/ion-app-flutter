@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_ion/flutter_ion.dart';
-import 'package:flutter_icons/flutter_icons.dart';
+import 'package:community_material_icon/community_material_icon.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ion/widget/video_render_adapter.dart';
 import 'package:ion/helper/ion_helper.dart';
@@ -9,16 +9,16 @@ import 'package:ion/page/chat_page.dart';
 
 class MeetingPage extends StatefulWidget {
   final IonHelper _helper;
-  MeetingPage(this._helper, {Key key}) : super(key: key);
+  MeetingPage(this._helper, {Key? key}) : super(key: key);
   @override
   _MeetingPageState createState() => _MeetingPageState();
 }
 
 class _MeetingPageState extends State<MeetingPage> {
-  SharedPreferences prefs;
+  late SharedPreferences prefs;
   List<VideoRendererAdapter> _remoteVideos = <VideoRendererAdapter>[];
-  VideoRendererAdapter _localVideo;
-  LocalStream _localStream;
+  VideoRendererAdapter? _localVideo;
+  LocalStream? _localStream;
 
   bool _cameraOff = false;
   bool _microphoneOff = false;
@@ -40,7 +40,7 @@ class _MeetingPageState extends State<MeetingPage> {
   init() async {
     prefs = await SharedPreferences.getInstance();
     var helper = widget._helper;
-    IonConnector ion = widget._helper.ion;
+    IonConnector ion = widget._helper.ion!;
 
     ion.onJoin = (bool success, String reason) {
       this._showSnackBar(":::Join success:::");
@@ -79,22 +79,18 @@ class _MeetingPageState extends State<MeetingPage> {
           break;
         case StreamState.REMOVE:
           this._showSnackBar(":::stream-remove [$mid]:::");
-          var adapter = _remoteVideos.firstWhere((item) => item.sid == mid);
-          if (adapter != null) {
-            await adapter.dispose();
-            this.setState(() {
-              _remoteVideos.remove(adapter);
-            });
-          }
+          var adapter = _remoteVideos.firstWhere((item) => item.mid == mid);
+          await adapter.dispose();
+          this.setState(() {
+            _remoteVideos.remove(adapter);
+          });
           break;
       }
     };
 
     ion.onTrack = (MediaStreamTrack track, RemoteStream stream) async {
       if (track.kind == 'video') {
-        var mid = stream.id;
-        var adapter =
-            VideoRendererAdapter(stream.id, stream.stream, false, mid);
+        var adapter = VideoRendererAdapter(stream.id, stream.stream, false);
         await adapter.setupSrcObject();
         this.setState(() {
           _remoteVideos.add(adapter);
@@ -109,9 +105,9 @@ class _MeetingPageState extends State<MeetingPage> {
     try {
       _localStream = await LocalStream.getUserMedia(
           constraints: Constraints.defaults..simulcast = false);
-      ion.sfu.publish(_localStream);
+      ion.sfu!.publish(_localStream!);
       var adapter = VideoRendererAdapter(
-          _localStream.stream.id, _localStream.stream, true);
+          _localStream!.stream.id, _localStream!.stream, true);
       await adapter.setupSrcObject();
       this.setState(() {
         _localVideo = adapter;
@@ -124,14 +120,14 @@ class _MeetingPageState extends State<MeetingPage> {
     var ion = helper.ion;
 
     if (_localVideo != null) {
-      await _localStream.unpublish();
+      await _localStream!.unpublish();
       _localVideo = null;
     }
 
     _remoteVideos.forEach((item) async {
       var stream = item.stream;
       try {
-        ion.sfu.close();
+        ion!.sfu!.close();
         await stream.dispose();
       } catch (error) {}
     });
@@ -186,9 +182,9 @@ class _MeetingPageState extends State<MeetingPage> {
                   _switchCamera();
                 },
                 onDoubleTap: () {
-                  _localVideo.switchObjFit();
+                  _localVideo?.switchObjFit();
                 },
-                child: RTCVideoView(_localVideo.renderer)),
+                child: RTCVideoView(_localVideo?.renderer)),
           ));
     }
     return Container();
@@ -239,7 +235,7 @@ class _MeetingPageState extends State<MeetingPage> {
   _switchSpeaker() {
     this.setState(() {
       _speakerOn = !_speakerOn;
-      MediaStreamTrack audioTrack = _localVideo.stream.getAudioTracks()[0];
+      MediaStreamTrack audioTrack = _localVideo!.stream.getAudioTracks()[0];
       audioTrack.enableSpeakerphone(_speakerOn);
       _showSnackBar(
           ":::Switch to " + (_speakerOn ? "speaker" : "earpiece") + ":::");
@@ -248,8 +244,9 @@ class _MeetingPageState extends State<MeetingPage> {
 
   //Switch local camera
   _switchCamera() {
-    if (_localVideo != null && _localVideo.stream.getVideoTracks().length > 0) {
-      _localVideo.stream.getVideoTracks()[0].switchCamera();
+    if (_localVideo != null &&
+        _localVideo!.stream.getVideoTracks().length > 0) {
+      _localVideo!.stream.getVideoTracks()[0].switchCamera();
     } else {
       _showSnackBar(":::Unable to switch the camera:::");
     }
@@ -257,12 +254,13 @@ class _MeetingPageState extends State<MeetingPage> {
 
   //Open or close local video
   _turnCamera() {
-    if (_localVideo != null && _localVideo.stream.getVideoTracks().length > 0) {
+    if (_localVideo != null &&
+        _localVideo!.stream.getVideoTracks().length > 0) {
       var muted = !_cameraOff;
       setState(() {
         _cameraOff = muted;
       });
-      _localVideo.stream.getVideoTracks()[0].enabled = !muted;
+      _localVideo!.stream.getVideoTracks()[0].enabled = !muted;
     } else {
       _showSnackBar(":::Unable to operate the camera:::");
     }
@@ -270,12 +268,13 @@ class _MeetingPageState extends State<MeetingPage> {
 
   //Open or close local audio
   _turnMicrophone() {
-    if (_localVideo != null && _localVideo.stream.getAudioTracks().length > 0) {
+    if (_localVideo != null &&
+        _localVideo!.stream.getAudioTracks().length > 0) {
       var muted = !_microphoneOff;
       setState(() {
         _microphoneOff = muted;
       });
-      _localVideo.stream.getAudioTracks()[0].enabled = !muted;
+      _localVideo!.stream.getAudioTracks()[0].enabled = !muted;
 
       if (muted) {
         _showSnackBar(":::The microphone is muted:::");
@@ -322,7 +321,7 @@ class _MeetingPageState extends State<MeetingPage> {
         milliseconds: 1000,
       ),
     );
-    _scaffoldkey.currentState.showSnackBar(snackBar);
+    _scaffoldkey.currentState!.showSnackBar(snackBar);
   }
 
   Widget _buildLoading() {
@@ -365,8 +364,8 @@ class _MeetingPageState extends State<MeetingPage> {
           ),
           child: Icon(
             _cameraOff
-                ? MaterialCommunityIcons.video_off
-                : MaterialCommunityIcons.video,
+                ? CommunityMaterialIcons.video_off
+                : CommunityMaterialIcons.video,
             color: _cameraOff ? Colors.red : Colors.white,
           ),
           onPressed: _turnCamera,
@@ -383,7 +382,7 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            MaterialCommunityIcons.video_switch,
+            CommunityMaterialIcons.video_switch,
             color: Colors.white,
           ),
           onPressed: _switchCamera,
@@ -401,8 +400,8 @@ class _MeetingPageState extends State<MeetingPage> {
           ),
           child: Icon(
             _microphoneOff
-                ? MaterialCommunityIcons.microphone_off
-                : MaterialCommunityIcons.microphone,
+                ? CommunityMaterialIcons.microphone_off
+                : CommunityMaterialIcons.microphone,
             color: _microphoneOff ? Colors.red : Colors.white,
           ),
           onPressed: _turnMicrophone,
@@ -419,7 +418,9 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            _speakerOn ? MaterialIcons.volume_up : MaterialIcons.speaker_phone,
+            _speakerOn
+                ? CommunityMaterialIcons.volume_high
+                : CommunityMaterialIcons.speaker_off,
             color: Colors.white,
           ),
           onPressed: _switchSpeaker,
@@ -436,7 +437,7 @@ class _MeetingPageState extends State<MeetingPage> {
             ),
           ),
           child: Icon(
-            MaterialCommunityIcons.phone_hangup,
+            CommunityMaterialIcons.phone_hangup,
             color: Colors.red,
           ),
           onPressed: _hangUp,

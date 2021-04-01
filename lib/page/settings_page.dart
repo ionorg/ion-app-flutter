@@ -3,18 +3,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ion/utils/utils.dart';
 
 class SettingsPage extends StatefulWidget {
-  SettingsPage({Key key}) : super(key: key);
+  SettingsPage({Key? key}) : super(key: key);
   @override
   _MySettingsPage createState() => _MySettingsPage();
 }
 
 class _MySettingsPage extends State<SettingsPage> {
-  String _resolution;
-  String _bandwidth;
-  String _codec;
-  String _displayName;
-
-  SharedPreferences _preferences;
+  late String _resolution;
+  late String _bandwidth;
+  late String _codec;
+  late String _displayName;
+  late SharedPreferences _preferences;
   @override
   initState() {
     super.initState();
@@ -132,7 +131,7 @@ class _MySettingsPage extends State<SettingsPage> {
                         value: item['value'],
                         title: Text(item['name']),
                         groupValue: value,
-                        onChanged: (value) => onValueChanged(value),
+                        onChanged: (value) => onValueChanged(value!),
                       ),
                     ))
                 .toList()));
