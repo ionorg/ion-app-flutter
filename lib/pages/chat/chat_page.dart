@@ -4,72 +4,69 @@ import 'package:ion/controllers/ion_controller.dart';
 import 'package:ion/pages/chat/chat_message.dart';
 import 'package:flutter_ion/flutter_ion.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class ChatPage extends StatefulWidget {
-  var _historyMessage = [];
-  String _displayName;
-  String _room;
-  ChatPage(this._historyMessage, this._displayName, this._room);
-
+class ChatBinding implements Bindings {
   @override
-  State createState() => ChatPageState();
+  void dependencies() {
+    Get.lazyPut<ChatController>(() => ChatController());
+  }
 }
 
-class ChatPageState extends State<ChatPage> {
+class ChatController extends GetxController {
   final _helper = Get.find<IonController>();
-  var _historyMessage = [];
-
+  SharedPreferences get prefs => _helper.prefs;
+  var _historyMessage = [].obs;
   String _displayName = "";
-  String _sid = "";
-
   final TextEditingController textEditingController = TextEditingController();
-  List<ChatMessage> _messages = <ChatMessage>[];
+  final _messages = Rx<List<ChatMessage>>([]);
+
   FocusNode textFocusNode = FocusNode();
 
   @override
-  void initState() {
-    super.initState();
-    _historyMessage = widget._historyMessage;
-    _displayName = widget._displayName;
-    _sid = widget._room;
+  @mustCallSuper
+  void onInit() async {
+    super.onInit();
     for (int i = 0; i < _historyMessage.length; i++) {
       var hisMsg = _historyMessage[i];
-
       ChatMessage message = ChatMessage(
+        hisMsg['uid'],
         hisMsg['text'],
         hisMsg['name'],
         formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
-        hisMsg['name'] == _displayName ? true : false,
+        hisMsg['uid'] == _helper.uid ? true : false,
       );
-      _messages.insert(0, message);
+      _messages.value.insert(0, message);
     }
-    setState(() {
-      _messages = _messages;
-    });
     _helper.ion?.onMessage = _messageProcess;
   }
 
   void _messageProcess(Message msg) async {
+    if (msg.from == _helper.uid) {
+      print('Skip self message');
+      return;
+    }
     var info = msg.data;
-    print('message: ' + msg.data.toString());
+    var sender = info['name'];
+    var text = info['text'];
+    var uid = info['uid'] as String;
+    //print('message: sender = ' + sender + ', text = ' + text);
     ChatMessage message = ChatMessage(
-      info['msg'],
-      info['senderName'],
+      uid,
+      text,
+      sender,
       formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
-      info['senderName'] == _displayName ? true : false,
+      uid == _helper.uid,
     );
 
-    _messages.insert(0, message);
-    setState(() {
-      _messages = _messages;
-    });
+    _messages.value.insert(0, message);
+    _messages.update((val) {});
   }
 
   @override
   void dispose() {
     print('Dispose chat widget!');
-
-    _messages = <ChatMessage>[];
+    _messages.value.clear();
     super.dispose();
   }
 
@@ -81,24 +78,26 @@ class ChatPageState extends State<ChatPage> {
     }
 
     var info = {
-      "senderName": _displayName,
-      "msg": text,
+      'uid': _helper.uid,
+      'name': _helper.name,
+      'text': text,
     };
 
-    _helper.ion?.message(_helper.uid, _sid, info);
+    _helper.ion?.message(_helper.uid, _helper.sid, info);
 
     var msg = ChatMessage(
+      _helper.uid,
       text,
       this._displayName,
       formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
       true,
     );
-    _messages.insert(0, msg);
-    setState(() {
-      _messages = _messages;
-    });
+    _messages.value.insert(0, msg);
+    _messages.update((val) {});
   }
+}
 
+class ChatView extends GetView<ChatController> {
   Widget textComposerWidget() {
     return IconTheme(
       data: IconThemeData(color: Colors.blue),
@@ -110,16 +109,17 @@ class ChatPageState extends State<ChatPage> {
               child: TextField(
                 decoration:
                     InputDecoration.collapsed(hintText: 'Please input message'),
-                controller: textEditingController,
-                onSubmitted: _handleSubmit,
-                focusNode: textFocusNode,
+                controller: controller.textEditingController,
+                onSubmitted: controller._handleSubmit,
+                focusNode: controller.textFocusNode,
               ),
             ),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 8.0),
               child: IconButton(
                 icon: Icon(Icons.send),
-                onPressed: () => _handleSubmit(textEditingController.text),
+                onPressed: () => controller
+                    ._handleSubmit(controller.textEditingController.text),
               ),
             )
           ],
@@ -138,12 +138,13 @@ class ChatPageState extends State<ChatPage> {
       body: Column(
         children: <Widget>[
           Flexible(
-            child: ListView.builder(
-              padding: EdgeInsets.all(8.0),
-              reverse: true,
-              itemBuilder: (_, int index) => _messages[index],
-              itemCount: _messages.length,
-            ),
+            child: Obx(() => ListView.builder(
+                  padding: EdgeInsets.all(8.0),
+                  reverse: true,
+                  itemBuilder: (_, int index) =>
+                      controller._messages.value[index],
+                  itemCount: controller._messages.value.length,
+                )),
           ),
           Divider(
             height: 1.0,

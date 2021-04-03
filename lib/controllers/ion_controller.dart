@@ -7,10 +7,12 @@ class IonController extends GetxController {
   late SharedPreferences prefs;
   IonConnector? _ion;
   late String _sid;
+  late String _name;
   final String _uid = Uuid().v4();
   IonConnector? get ion => _ion;
   String get sid => _sid;
   String get uid => _uid;
+  String get name => _name;
   Client? get sfu => _ion?.sfu;
 
   @override
@@ -29,6 +31,7 @@ class IonController extends GetxController {
 
   join(String sid, String displayName) async {
     _sid = sid;
+    _name = displayName;
     _ion?.join(sid: _sid, uid: _uid, info: {'name': '$displayName'});
   }
 

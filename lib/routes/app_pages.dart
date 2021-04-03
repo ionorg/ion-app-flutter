@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:ion/pages/chat/chat_page.dart';
 import '../pages/login/login_page.dart';
 import '../pages/meeting/meeting_page.dart';
 import '../pages/settings/settings_page.dart';
@@ -26,6 +27,12 @@ class AppPages {
       title: 'Settings View',
       page: () => SettingsView(),
       binding: SettingsBinding(),
+    ),
+    GetPage(
+      name: '/chat',
+      title: 'Chat View',
+      page: () => ChatView(),
+      binding: ChatBinding(),
     ),
   ];
 }

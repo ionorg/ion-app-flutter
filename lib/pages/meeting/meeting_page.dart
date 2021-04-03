@@ -115,16 +115,21 @@ class MeetingController extends GetxController {
     };
 
     ion?.onStreamEvent = (StreamEvent event) async {
-      var mid = event.streams[0].id;
       switch (event.state) {
         case StreamState.NONE:
           break;
         case StreamState.ADD:
-          this._showSnackBar(":::stream-add [$mid]:::");
+          if (event.streams.isNotEmpty) {
+            var mid = event.streams[0].id;
+            this._showSnackBar(":::stream-add [$mid]:::");
+          }
           break;
         case StreamState.REMOVE:
-          this._showSnackBar(":::stream-remove [$mid]:::");
-          _removeAdapter(mid);
+          if (event.streams.isNotEmpty) {
+            var mid = event.streams[0].id;
+            this._showSnackBar(":::stream-remove [$mid]:::");
+            _removeAdapter(mid);
+          }
           break;
       }
     };
