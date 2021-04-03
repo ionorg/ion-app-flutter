@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class IonController extends GetxController {
-  late SharedPreferences prefs;
+  SharedPreferences? _prefs;
   IonConnector? _ion;
   late String _sid;
   late String _name;
@@ -18,8 +18,14 @@ class IonController extends GetxController {
   @override
   void onInit() async {
     super.onInit();
-    prefs = await SharedPreferences.getInstance();
     print('IonController::onInit');
+  }
+
+  Future<SharedPreferences> prefs() async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    return _prefs!;
   }
 
   connect(host) async {

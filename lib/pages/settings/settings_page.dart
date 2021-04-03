@@ -13,7 +13,7 @@ class SettingsBinding implements Bindings {
 
 class SettingsController extends GetxController {
   final _helper = Get.find<IonController>();
-  SharedPreferences get prefs => _helper.prefs;
+  late SharedPreferences prefs;
 
   var _resolution = ''.obs;
   var _bandwidth = ''.obs;
@@ -24,6 +24,7 @@ class SettingsController extends GetxController {
   @mustCallSuper
   void onInit() async {
     super.onInit();
+    prefs = await _helper.prefs();
     _resolution.value = prefs.getString('resolution') ?? 'vga';
     _bandwidth.value = prefs.getString('bandwidth') ?? '512';
     _displayName.value = prefs.getString('display_name') ?? 'Guest';
@@ -168,10 +169,10 @@ class SettingsView extends GetView<SettingsController> {
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(4.0, 0.0, 4.0, 0),
-                          child: _buildRowFixTitleRadio(
+                          child: Obx( () => _buildRowFixTitleRadio(
                               _codecItems, controller._codec.value, (value) {
                             controller._codec.value = value;
-                          }),
+                          })),
                         ),
                       ],
                     ),
@@ -187,11 +188,11 @@ class SettingsView extends GetView<SettingsController> {
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(4.0, 0.0, 4.0, 0),
-                          child: _buildRowFixTitleRadio(
+                          child: Obx(() => _buildRowFixTitleRadio(
                               _resolutionItems, controller._resolution.value,
                               (value) {
                             controller._resolution.value = value;
-                          }),
+                          })),
                         ),
                       ],
                     ),
@@ -207,11 +208,11 @@ class SettingsView extends GetView<SettingsController> {
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(4.0, 0.0, 4.0, 0),
-                          child: _buildRowFixTitleRadio(
+                          child: Obx(() => _buildRowFixTitleRadio(
                               _bandwidthItems, controller._bandwidth.value,
                               (value) {
                             controller._bandwidth.value = value;
-                          }),
+                          })),
                         ),
                       ],
                     ),

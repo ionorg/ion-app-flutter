@@ -13,7 +13,7 @@ class LoginBinding implements Bindings {
 
 class LoginController extends GetxController {
   final _helper = Get.find<IonController>();
-  SharedPreferences get prefs => _helper.prefs;
+  late SharedPreferences prefs;
   late var _server = ''.obs;
   late var _sid = ''.obs;
 
@@ -21,6 +21,7 @@ class LoginController extends GetxController {
   @mustCallSuper
   void onInit() async {
     super.onInit();
+    prefs = await SharedPreferences.getInstance();
     _server.value = prefs.getString('server') ?? '127.0.0.1';
     _sid.value = prefs.getString('room') ?? 'test room';
   }

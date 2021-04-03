@@ -19,7 +19,7 @@ class VideoRendererAdapter {
   RTCVideoRenderer? renderer;
   MediaStream stream;
   RTCVideoViewObjectFit _objectFit =
-      RTCVideoViewObjectFit.RTCVideoViewObjectFitContain;
+      RTCVideoViewObjectFit.RTCVideoViewObjectFitCover;
   VideoRendererAdapter._internal(this.mid, this.stream, this.local);
 
   static Future<VideoRendererAdapter> create(
@@ -63,7 +63,7 @@ class VideoRendererAdapter {
 
 class MeetingController extends GetxController {
   final _helper = Get.find<IonController>();
-  SharedPreferences get prefs => _helper.prefs;
+  late SharedPreferences prefs;
   final videoRenderers = Rx<List<VideoRendererAdapter>>([]);
   LocalStream? _localStream;
   IonConnector? get ion => _helper.ion;
@@ -77,8 +77,7 @@ class MeetingController extends GetxController {
   @mustCallSuper
   void onInit() async {
     super.onInit();
-    name.value = prefs.getString('display_name') ?? 'Guest';
-    room.value = prefs.getString('room') ?? 'room1';
+    prefs = await _helper.prefs();
 
     if (_helper.ion == null) {
       print(":::IonHelper is not initialized!:::");
@@ -87,8 +86,25 @@ class MeetingController extends GetxController {
       return;
     }
 
-    ion?.onJoin = (bool success, String reason) {
+    ion?.onJoin = (bool success, String reason) async {
       this._showSnackBar(":::Join success:::");
+      if (success) {
+        try {
+            var resolution = prefs.getString('resolution') ?? 'hd';
+            var codec = prefs.getString('codec') ?? 'vp8';
+
+          _localStream = await LocalStream.getUserMedia(
+              constraints: Constraints.defaults
+              ..simulcast = false
+              ..resolution = resolution
+              ..codec = codec);
+          ion?.sfu!.publish(_localStream!);
+          _addAdapter(await VideoRendererAdapter.create(
+              _localStream!.stream.id, _localStream!.stream, true));
+        } catch (error) {
+          print('publish err ${error.toString()}');
+        }
+      }
     };
 
     ion?.onLeave = (String reason) {
@@ -141,14 +157,9 @@ class MeetingController extends GetxController {
       }
     };
 
+    name.value = prefs.getString('display_name') ?? 'Guest';
+    room.value = prefs.getString('room') ?? 'room1';
     _helper.join(room.value, name.value);
-    try {
-      _localStream = await LocalStream.getUserMedia(
-          constraints: Constraints.defaults..simulcast = false);
-      ion?.sfu!.publish(_localStream!);
-      _addAdapter(await VideoRendererAdapter.create(
-          _localStream!.stream.id, _localStream!.stream, true));
-    } catch (error) {}
   }
 
   _removeAdapter(String mid) {
@@ -620,13 +631,13 @@ class MeetingView extends GetView<MeetingController> {
                         Container(
                           margin: EdgeInsets.all(0.0),
                           child: Center(
-                            child: Text(
+                            child: Obx(() => Text(
                               'ION Conference [${controller.room.value}]',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 18.0,
                               ),
-                            ),
+                            )),
                           ),
                         ),
                         Row(

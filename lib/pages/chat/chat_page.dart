@@ -15,18 +15,18 @@ class ChatBinding implements Bindings {
 
 class ChatController extends GetxController {
   final _helper = Get.find<IonController>();
-  SharedPreferences get prefs => _helper.prefs;
-  var _historyMessage = [].obs;
+  late SharedPreferences prefs;
+  var _historyMessage = [];
   String _displayName = "";
   final TextEditingController textEditingController = TextEditingController();
   final _messages = Rx<List<ChatMessage>>([]);
-
   FocusNode textFocusNode = FocusNode();
 
   @override
   @mustCallSuper
   void onInit() async {
     super.onInit();
+    prefs = await _helper.prefs();
     for (int i = 0; i < _historyMessage.length; i++) {
       var hisMsg = _historyMessage[i];
       ChatMessage message = ChatMessage(
