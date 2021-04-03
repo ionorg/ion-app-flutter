@@ -10,6 +10,7 @@ class MeetingBinding implements Bindings {
   @override
   void dependencies() {
     Get.lazyPut<MeetingController>(() => MeetingController());
+    Get.lazyPut<IonController>(() => IonController());
   }
 }
 
@@ -47,6 +48,8 @@ class VideoRendererAdapter {
             : RTCVideoViewObjectFit.RTCVideoViewObjectFitContain;
   }
 
+  RTCVideoViewObjectFit get objFit => _objectFit;
+
   set objectFit(RTCVideoViewObjectFit objectFit) {
     _objectFit = objectFit;
   }
@@ -79,10 +82,10 @@ class MeetingController extends GetxController {
     super.onInit();
     prefs = await _helper.prefs();
 
-    if (_helper.ion == null) {
+    if (ion == null) {
       print(":::IonHelper is not initialized!:::");
       print("Goback to /login");
-      Get.toNamed('/login');
+      Get.offNamed('/login');
       return;
     }
 
@@ -353,7 +356,7 @@ class MeetingView extends GetView<MeetingController> {
           onDoubleTap: () {
             adapter.switchObjFit();
           },
-          child: RTCVideoView(adapter.renderer!));
+          child: RTCVideoView(adapter.renderer!, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain));
     });
   }
 
@@ -397,7 +400,7 @@ class MeetingView extends GetView<MeetingController> {
                 onDoubleTap: () {
                   localVideo?.switchObjFit();
                 },
-                child: RTCVideoView(localVideo!.renderer!)),
+                child: RTCVideoView(localVideo!.renderer!, objectFit: localVideo!.objFit)),
           ));
     });
   }
@@ -417,7 +420,7 @@ class MeetingView extends GetView<MeetingController> {
         child: GestureDetector(
             onTap: () => controller._swapAdapter(adapter),
             onDoubleTap: () => adapter.switchObjFit(),
-            child: RTCVideoView(adapter.renderer!)),
+            child: RTCVideoView(adapter.renderer!, objectFit: adapter.objFit)),
       ),
     );
   }
