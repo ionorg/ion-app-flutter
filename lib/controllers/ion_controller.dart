@@ -1,19 +1,24 @@
-import 'package:events2/events2.dart';
 import 'package:flutter_ion/flutter_ion.dart';
 import 'package:uuid/uuid.dart';
+import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class IonHelper extends EventEmitter {
+class IonController extends GetxController {
+  late SharedPreferences prefs;
   IonConnector? _ion;
   late String _sid;
   final String _uid = Uuid().v4();
-
   IonConnector? get ion => _ion;
-
   String get sid => _sid;
-
   String get uid => _uid;
-
   Client? get sfu => _ion?.sfu;
+
+  @override
+  void onInit() async {
+    super.onInit();
+    prefs = await SharedPreferences.getInstance();
+    print('IonController::onInit');
+  }
 
   connect(host) async {
     if (_ion == null) {
@@ -28,9 +33,8 @@ class IonHelper extends EventEmitter {
   }
 
   close() async {
-    if (_ion != null) {
-      _ion?.leave(_uid);
-      _ion?.close();
-    }
+    _ion?.leave(_uid);
+    _ion?.close();
+    _ion = null;
   }
 }

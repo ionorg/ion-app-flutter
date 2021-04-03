@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:date_format/date_format.dart';
-import 'package:ion/helper/ion_helper.dart';
-import 'package:ion/page/chat_message.dart';
+import 'package:ion/controllers/ion_controller.dart';
+import 'package:ion/pages/chat/chat_message.dart';
 import 'package:flutter_ion/flutter_ion.dart';
+import 'package:get/get.dart';
 
 class ChatPage extends StatefulWidget {
-  IonHelper _helper;
   var _historyMessage = [];
   String _displayName;
   String _room;
-
-  ChatPage(this._helper, this._historyMessage, this._displayName, this._room);
+  ChatPage(this._historyMessage, this._displayName, this._room);
 
   @override
   State createState() => ChatPageState();
 }
 
 class ChatPageState extends State<ChatPage> {
-  IonHelper? _helper;
+  final _helper = Get.find<IonController>();
   var _historyMessage = [];
 
   String _displayName = "";
@@ -30,29 +29,24 @@ class ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
-
-    _helper = widget._helper;
     _historyMessage = widget._historyMessage;
     _displayName = widget._displayName;
     _sid = widget._room;
+    for (int i = 0; i < _historyMessage.length; i++) {
+      var hisMsg = _historyMessage[i];
 
-    if (_helper != null) {
-      for (int i = 0; i < _historyMessage.length; i++) {
-        var hisMsg = _historyMessage[i];
-
-        ChatMessage message = ChatMessage(
-          hisMsg['text'],
-          hisMsg['name'],
-          formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
-          hisMsg['name'] == _displayName ? true : false,
-        );
-        _messages.insert(0, message);
-      }
-      setState(() {
-        _messages = _messages;
-      });
-      _helper?.ion?.onMessage = _messageProcess;
+      ChatMessage message = ChatMessage(
+        hisMsg['text'],
+        hisMsg['name'],
+        formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
+        hisMsg['name'] == _displayName ? true : false,
+      );
+      _messages.insert(0, message);
     }
+    setState(() {
+      _messages = _messages;
+    });
+    _helper.ion?.onMessage = _messageProcess;
   }
 
   void _messageProcess(Message msg) async {
@@ -91,7 +85,7 @@ class ChatPageState extends State<ChatPage> {
       "msg": text,
     };
 
-    _helper?.ion?.message(_helper!.uid, _sid, info);
+    _helper.ion?.message(_helper.uid, _sid, info);
 
     var msg = ChatMessage(
       text,
