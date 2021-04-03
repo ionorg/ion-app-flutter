@@ -253,6 +253,8 @@ class MeetingController extends GetxController {
   }
 
   _showSnackBar(String message) {
+    print(message);
+    /*
     _scaffoldkey.currentState!.showSnackBar(SnackBar(
       content: Container(
         //color: Colors.white,
@@ -273,7 +275,7 @@ class MeetingController extends GetxController {
       duration: Duration(
         milliseconds: 1000,
       ),
-    ));
+    ));*/
   }
 
   _hangUp() {
