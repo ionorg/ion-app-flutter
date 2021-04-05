@@ -2,7 +2,7 @@
 
 FLUTTER_APP_FOLDER=$(cd `dirname $0`/../; pwd)
 FLUTTER_APP_ORG=com.github.pion.ion
-FLUTTER_APP_PROJECT_NAME=ion_flutter_example
+FLUTTER_APP_PROJECT_NAME=ion_flutter_app
 CMD=$1
 
 function cleanup() {
@@ -17,7 +17,7 @@ function create() {
         echo "Create flutter project: name=$FLUTTER_APP_PROJECT_NAME, org=$FLUTTER_APP_ORG ..."
         flutter config --enable-macos-desktop
         flutter config --enable-web
-        flutter create --android-language java --androidx --ios-language objc --project-name $FLUTTER_APP_PROJECT_NAME --org $FLUTTER_APP_ORG .
+        flutter create --android-language java --ios-language objc --project-name $FLUTTER_APP_PROJECT_NAME --org $FLUTTER_APP_ORG .
         add_permission_label
     else
         echo "Project [$FLUTTER_APP_PROJECT_NAME] already exists!"
@@ -33,11 +33,11 @@ function add_permission_label() {
     python add-line.py -i ../ios/Runner/Info.plist -s '<key>UILaunchStoryboardName</key>' -t '	<string>$(PRODUCT_NAME) Camera Usage!</string>'
     python add-line.py -i ../ios/Runner/Info.plist -s '<key>UILaunchStoryboardName</key>' -t '	<key>NSMicrophoneUsageDescription</key>'
     python add-line.py -i ../ios/Runner/Info.plist -s '<key>UILaunchStoryboardName</key>' -t '	<string>$(PRODUCT_NAME) Microphone Usage!</string>'
-    python add-line.py -i ../ios/Podfile -s "# platform :ios" -t "platform :ios" -r
+    python add-line.py -i ../ios/Podfile -s "# platform :ios, '9.0'" -t "platform :ios, '10.0'" -r
     echo ""
     echo "Add permission labels to AndroidManifest.xml."
     echo ""
-    python add-line.py -i ../android/app/build.gradle -s 'minSdkVersion 16' -t 'minSdkVersion 18' -r
+    python add-line.py -i ../android/app/build.gradle -s 'minSdkVersion 16' -t 'minSdkVersion 21' -r
     python add-line.py -i ../android/app/src/main/AndroidManifest.xml -s "<application" -t '    <uses-permission android:name="android.permission.CAMERA" />'
     python add-line.py -i ../android/app/src/main/AndroidManifest.xml -s "<application" -t '    <uses-permission android:name="android.permission.RECORD_AUDIO" />'
     python add-line.py -i ../android/app/src/main/AndroidManifest.xml -s "<application" -t '    <uses-permission android:name="android.permission.WAKE_LOCK" />'
