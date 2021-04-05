@@ -2,19 +2,21 @@
 
 ## Getting Started
 
-Make sure your flutter is using the `dev` channel.
+Make sure your flutter is `2.0`.
 
-- `flutter channel dev`
 - `./scripts/project_tools.sh create`
 
-## For Android/iOS
+### For Android/iOS
 
 - `flutter run`
 
-## For Desktop or Web
+### For macOS
 
 - `flutter run -d macos`
-- `flutter run -d web|chrome`
+
+### For Web
+
+- `flutter run -d chrome`
 
 ## Screenshots
 

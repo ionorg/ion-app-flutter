@@ -1,48 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ion/helper/ion_helper.dart';
+import 'package:ion/controllers/ion_controller.dart';
 import 'package:ion/utils/utils.dart';
+import 'package:get/get.dart';
 
-class LoginPage extends StatefulWidget {
-  final IonHelper _helper;
-  LoginPage(this._helper, {Key key, this.title}) : super(key: key);
-  final String title;
+class LoginBinding implements Bindings {
   @override
-  _LoginPageState createState() => _LoginPageState();
+  void dependencies() {
+    Get.lazyPut<LoginController>(() => LoginController());
+    Get.lazyPut<IonController>(() => IonController());
+  }
 }
 
-class _LoginPageState extends State<LoginPage> {
-  String _server;
-  String _roomID;
-  SharedPreferences prefs;
+class LoginController extends GetxController {
+  final _helper = Get.find<IonController>();
+  late SharedPreferences prefs;
+  late var _server = ''.obs;
+  late var _sid = ''.obs;
 
   @override
-  initState() {
-    super.initState();
-    init();
-  }
-
-  init() async {
-    IonHelper helper = widget._helper;
+  @mustCallSuper
+  void onInit() async {
+    super.onInit();
     prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _server = prefs.getString('server') ?? 'pionion.org';
-      _roomID = prefs.getString('room') ?? 'room1';
-    });
-
-    helper.on('transport-open', () {
-      Navigator.pushNamed(context, '/meeting');
-    });
+    _server.value = prefs.getString('server') ?? '127.0.0.1';
+    _sid.value = prefs.getString('room') ?? 'test room';
   }
 
-  handleJoin() async {
-    IonHelper helper = widget._helper;
-    prefs.setString('server', _server);
-    prefs.setString('room', _roomID);
-    prefs.commit();
-    helper.connect(_server);
+  bool handleJoin() {
+    if (_server.value.length == 0 || _sid.value.length == 0) {
+      return false;
+    }
+    prefs.setString('server', _server.value);
+    prefs.setString('room', _sid.value);
+    _helper.connect(_server);
+    Get.toNamed('/meeting');
+    return true;
   }
+}
 
+class LoginView extends GetView<LoginController> {
   Widget buildJoinView(context) {
     return Align(
         alignment: Alignment(0, 0),
@@ -52,50 +49,45 @@ class _LoginPageState extends State<LoginPage> {
             children: <Widget>[
               SizedBox(
                   width: 260.0,
-                  child: TextField(
+                  child: Obx(() => TextField(
                       keyboardType: TextInputType.text,
                       textAlign: TextAlign.center,
                       decoration: InputDecoration(
-                        contentPadding: EdgeInsets.all(10.0),
-                        border: UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.black12)),
-                        hintText: _server ?? 'Enter Ion Server.',
-                      ),
+                          contentPadding: EdgeInsets.all(10.0),
+                          border: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black12)),
+                          hintText: 'Enter Ion Server.'),
                       onChanged: (value) {
-                        setState(() {
-                          _server = value;
-                        });
+                        controller._server.value = value;
                       },
                       controller:
                           TextEditingController.fromValue(TextEditingValue(
-                        text: '${this._server == null ? "" : this._server}',
+                        text: controller._server.value,
                         selection: TextSelection.fromPosition(TextPosition(
                             affinity: TextAffinity.downstream,
-                            offset: '${this._server}'.length)),
-                      )))),
+                            offset: '${controller._server.value}'.length)),
+                      ))))),
               SizedBox(
                   width: 260.0,
-                  child: TextField(
+                  child: Obx(() => TextField(
                       keyboardType: TextInputType.text,
                       textAlign: TextAlign.center,
                       decoration: InputDecoration(
                         contentPadding: EdgeInsets.all(10.0),
                         border: UnderlineInputBorder(
                             borderSide: BorderSide(color: Colors.black12)),
-                        hintText: _roomID ?? 'Enter RoomID.',
+                        hintText: 'Enter RoomID.',
                       ),
                       onChanged: (value) {
-                        setState(() {
-                          _roomID = value;
-                        });
+                        controller._sid.value = value;
                       },
                       controller:
                           TextEditingController.fromValue(TextEditingValue(
-                        text: '${this._roomID == null ? "" : this._roomID}',
+                        text: controller._sid.value,
                         selection: TextSelection.fromPosition(TextPosition(
                             affinity: TextAffinity.downstream,
-                            offset: '${this._roomID}'.length)),
-                      )))),
+                            offset: '${controller._sid}'.length)),
+                      ))))),
               SizedBox(width: 260.0, height: 48.0),
               InkWell(
                 child: Container(
@@ -119,29 +111,18 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 onTap: () {
-                  if (_roomID != null) {
-                    handleJoin();
-                    prefs.setString('room', _roomID);
-                    return;
+                  if (!controller.handleJoin()) {
+                    Get.dialog(AlertDialog(
+                      title: Text('Room/Server is empty'),
+                      content: Text('Please input room/server!'),
+                      actions: <Widget>[
+                        TextButton(
+                          child: Text('Ok'),
+                          onPressed: () => Get.back(),
+                        ),
+                      ],
+                    ));
                   }
-                  showDialog<Null>(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text('Client id is empty'),
-                        content: Text('Please enter Ion room id!'),
-                        actions: <Widget>[
-                          FlatButton(
-                            child: Text('Ok'),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
                 },
               ),
             ]));
@@ -161,9 +142,9 @@ class _LoginPageState extends State<LoginPage> {
             Positioned(
               bottom: 6.0,
               right: 6.0,
-              child: FlatButton(
+              child: TextButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/settings');
+                  Get.toNamed('/settings');
                 },
                 child: Text(
                   "Settings",

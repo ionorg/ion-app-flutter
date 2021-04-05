@@ -1,25 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:ion/helper/ion_helper.dart';
-import 'package:ion/page/settings_page.dart';
-import 'package:ion/page/login_page.dart';
-import 'package:ion/page/meeting_page.dart';
-import 'package:ion/utils/utils.dart';
+import 'package:get/get.dart';
 
-void main() => runApp(MyApp());
+import 'controllers/ion_controller.dart';
+import './utils/utils.dart';
+import './routes/app_pages.dart';
+import 'pages/not_found/not_found_view.dart';
+import './utils/logger_utils.dart';
+
+void main() {
+  Get.put(IonController(), permanent: true);
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
-  final IonHelper _helper = IonHelper();
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
+    return GetMaterialApp(
+      debugShowCheckedModeBanner: true,
+      unknownRoute: GetPage(name: 'not-found', page: () => NotFound()),
+      enableLog: true,
       theme: mDefaultTheme,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => LoginPage(_helper),
-        '/meeting': (context) => MeetingPage(_helper),
-        '/settings': (context) => SettingsPage(),
-      },
+      logWriterCallback: Logger.write,
+      initialRoute: AppPages.init,
+      getPages: AppPages.routes,
     );
   }
 }

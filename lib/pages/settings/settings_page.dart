@@ -1,53 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ion/utils/utils.dart';
+import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../controllers/ion_controller.dart';
 
-class SettingsPage extends StatefulWidget {
-  SettingsPage({Key key}) : super(key: key);
+class SettingsBinding implements Bindings {
   @override
-  _MySettingsPage createState() => _MySettingsPage();
+  void dependencies() {
+    Get.lazyPut<SettingsController>(() => SettingsController());
+  }
 }
 
-class _MySettingsPage extends State<SettingsPage> {
-  String _resolution;
-  String _bandwidth;
-  String _codec;
-  String _displayName;
+class SettingsController extends GetxController {
+  final _helper = Get.find<IonController>();
+  late SharedPreferences prefs;
 
-  SharedPreferences _preferences;
-  @override
-  initState() {
-    super.initState();
-    _loadSettings();
-  }
+  var _resolution = ''.obs;
+  var _bandwidth = ''.obs;
+  var _codec = ''.obs;
+  var _displayName = ''.obs;
 
   @override
-  deactivate() {
-    super.deactivate();
-    _saveSettings();
+  @mustCallSuper
+  void onInit() async {
+    super.onInit();
+    prefs = await _helper.prefs();
+    _resolution.value = prefs.getString('resolution') ?? 'vga';
+    _bandwidth.value = prefs.getString('bandwidth') ?? '512';
+    _displayName.value = prefs.getString('display_name') ?? 'Guest';
+    _codec.value = prefs.getString('codec') ?? 'vp8';
   }
 
-  void _loadSettings() async {
-    _preferences = await SharedPreferences.getInstance();
-    this.setState(() {
-      _resolution = _preferences.getString('resolution') ?? 'vga';
-      _bandwidth = _preferences.getString('bandwidth') ?? '512';
-      _displayName = _preferences.getString('display_name') ?? 'Guest';
-      _codec = _preferences.getString('codec') ?? 'vp8';
-    });
+  save() {
+    prefs.setString('resolution', _resolution.value);
+    prefs.setString('bandwidth', _bandwidth.value);
+    prefs.setString('display_name', _displayName.value);
+    prefs.setString('codec', _codec.value);
+    Get.back();
   }
+}
 
-  void _saveSettings() {
-    _preferences.setString('resolution', _resolution);
-    _preferences.setString('bandwidth', _bandwidth);
-    _preferences.setString('display_name', _displayName);
-    _preferences.setString('codec', _codec);
-  }
-
-  void _handleSave(BuildContext context) {
-    Navigator.of(context).pop();
-  }
-
+class SettingsView extends GetView<SettingsController> {
   var _codecItems = [
     {
       'name': 'H264',
@@ -62,12 +55,6 @@ class _MySettingsPage extends State<SettingsPage> {
       'value': 'VP9',
     },
   ];
-
-  _onCodecChanged(String value) {
-    setState(() {
-      _codec = value;
-    });
-  }
 
   var _bandwidthItems = [
     {
@@ -88,12 +75,6 @@ class _MySettingsPage extends State<SettingsPage> {
     },
   ];
 
-  _onbandwidthChanged(String value) {
-    setState(() {
-      _bandwidth = value;
-    });
-  }
-
   var _resolutionItems = [
     {
       'name': 'QVGA',
@@ -108,12 +89,6 @@ class _MySettingsPage extends State<SettingsPage> {
       'value': 'hd',
     },
   ];
-
-  _onResolutionChanged(String value) {
-    setState(() {
-      _resolution = value;
-    });
-  }
 
   Widget _buildRowFixTitleRadio(List<Map<String, dynamic>> items, var value,
       ValueChanged<String> onValueChanged) {
@@ -132,7 +107,7 @@ class _MySettingsPage extends State<SettingsPage> {
                         value: item['value'],
                         title: Text(item['name']),
                         groupValue: value,
-                        onChanged: (value) => onValueChanged(value),
+                        onChanged: (value) => onValueChanged(value!),
                       ),
                     ))
                 .toList()));
@@ -173,12 +148,10 @@ class _MySettingsPage extends State<SettingsPage> {
                               border: UnderlineInputBorder(
                                   borderSide:
                                       BorderSide(color: Colors.black12)),
-                              hintText: _displayName,
+                              hintText: controller._displayName.value,
                             ),
                             onChanged: (value) {
-                              setState(() {
-                                _displayName = value;
-                              });
+                              controller._displayName.value = value;
                             },
                           ),
                         ),
@@ -196,8 +169,10 @@ class _MySettingsPage extends State<SettingsPage> {
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(4.0, 0.0, 4.0, 0),
-                          child: _buildRowFixTitleRadio(
-                              _codecItems, _codec, _onCodecChanged),
+                          child: Obx( () => _buildRowFixTitleRadio(
+                              _codecItems, controller._codec.value, (value) {
+                            controller._codec.value = value;
+                          })),
                         ),
                       ],
                     ),
@@ -213,8 +188,11 @@ class _MySettingsPage extends State<SettingsPage> {
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(4.0, 0.0, 4.0, 0),
-                          child: _buildRowFixTitleRadio(_resolutionItems,
-                              _resolution, _onResolutionChanged),
+                          child: Obx(() => _buildRowFixTitleRadio(
+                              _resolutionItems, controller._resolution.value,
+                              (value) {
+                            controller._resolution.value = value;
+                          })),
                         ),
                       ],
                     ),
@@ -230,8 +208,11 @@ class _MySettingsPage extends State<SettingsPage> {
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(4.0, 0.0, 4.0, 0),
-                          child: _buildRowFixTitleRadio(
-                              _bandwidthItems, _bandwidth, _onbandwidthChanged),
+                          child: Obx(() => _buildRowFixTitleRadio(
+                              _bandwidthItems, controller._bandwidth.value,
+                              (value) {
+                            controller._bandwidth.value = value;
+                          })),
                         ),
                       ],
                     ),
@@ -261,7 +242,7 @@ class _MySettingsPage extends State<SettingsPage> {
                                   ),
                                 ),
                               ),
-                              onTap: () => _handleSave(context),
+                              onTap: () => controller.save(),
                             )))
                   ]),
             )));
