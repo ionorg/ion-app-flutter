@@ -232,9 +232,9 @@ class MeetingController extends GetxController {
   _turnCamera() {
     if (_localVideo != null &&
         _localVideo!.stream.getVideoTracks().length > 0) {
-      var muted = _cameraOff.value;
-      _cameraOff.value = !muted;
-      _localVideo?.stream.getVideoTracks()[0].enabled = muted;
+      var muted = !_cameraOff.value;
+      _cameraOff.value = muted;
+      _localVideo?.stream.getVideoTracks()[0].enabled = !muted;
     } else {
       _showSnackBar(":::Unable to operate the camera:::");
     }
