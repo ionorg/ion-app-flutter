@@ -10,7 +10,6 @@ class MeetingBinding implements Bindings {
   @override
   void dependencies() {
     Get.lazyPut<MeetingController>(() => MeetingController());
-    Get.lazyPut<IonController>(() => IonController());
   }
 }
 
@@ -21,6 +20,7 @@ class VideoRendererAdapter {
   MediaStream stream;
   RTCVideoViewObjectFit _objectFit =
       RTCVideoViewObjectFit.RTCVideoViewObjectFitCover;
+
   VideoRendererAdapter._internal(this.mid, this.stream, this.local);
 
   static Future<VideoRendererAdapter> create(
@@ -65,49 +65,63 @@ class VideoRendererAdapter {
 }
 
 class MeetingController extends GetxController {
-  final _helper = Get.find<IonController>();
+  final _ionController = Get.find<IonController>();
   late SharedPreferences prefs;
   final videoRenderers = Rx<List<VideoRendererAdapter>>([]);
   LocalStream? _localStream;
-  IonConnector? get ion => _helper.ion;
+
+  IonAppBiz? get ion => _ionController.ion;
   var _cameraOff = false.obs;
   var _microphoneOff = false.obs;
   var _speakerOn = true.obs;
-  var _scaffoldkey = GlobalKey<ScaffoldState>();
+  GlobalKey<ScaffoldState>? _scaffoldkey;
   var name = ''.obs;
   var room = ''.obs;
-  @override
-  @mustCallSuper
-  void onInit() async {
-    super.onInit();
-    prefs = await _helper.prefs();
 
-    if (ion == null) {
-      print(":::IonHelper is not initialized!:::");
-      print("Goback to /login");
-      Get.offNamed('/login');
-      return;
-    }
+  connect() async {
+    _scaffoldkey = GlobalKey();
+
+    prefs = await _ionController.prefs();
+
+    //if this client is hosted as a website, using https, the ion-backend has to be
+    //reached via wss. So the address should be for example:
+    //https://your-backend-address.com
+    var host = prefs.getString('server') ?? '127.0.0.1';
+    var address = 'http://' + host + ':5551';
+
+    //connect to BIZ
+    await _ionController.connectBIZ(address);
 
     ion?.onJoin = (bool success, String reason) async {
-      this._showSnackBar(":::Join success:::");
       if (success) {
         try {
-            var resolution = prefs.getString('resolution') ?? 'hd';
-            var codec = prefs.getString('codec') ?? 'vp8';
+          var resolution = prefs.getString('resolution') ?? 'hd';
+          var codec = prefs.getString('codec') ?? 'vp8';
+
+          //connect to SFU
+          await _ionController.connectSFU(address);
+
+          _ionController.clientSFU!.ontrack =
+              (MediaStreamTrack track, RemoteStream stream) async {
+            if (track.kind == 'video') {
+              _addAdapter(await VideoRendererAdapter.create(
+                  stream.id, stream.stream, false));
+            }
+          };
 
           _localStream = await LocalStream.getUserMedia(
               constraints: Constraints.defaults
-              ..simulcast = false
-              ..resolution = resolution
-              ..codec = codec);
-          ion?.sfu!.publish(_localStream!);
+                ..simulcast = false
+                ..resolution = resolution
+                ..codec = codec);
+          _ionController.clientSFU!.publish(_localStream!);
           _addAdapter(await VideoRendererAdapter.create(
               _localStream!.stream.id, _localStream!.stream, true));
         } catch (error) {
           print('publish err ${error.toString()}');
         }
       }
+      this._showSnackBar(":::Join success:::");
     };
 
     ion?.onLeave = (String reason) {
@@ -153,16 +167,9 @@ class MeetingController extends GetxController {
       }
     };
 
-    ion?.onTrack = (MediaStreamTrack track, RemoteStream stream) async {
-      if (track.kind == 'video') {
-        _addAdapter(
-            await VideoRendererAdapter.create(stream.id, stream.stream, false));
-      }
-    };
-
     name.value = prefs.getString('display_name') ?? 'Guest';
     room.value = prefs.getString('room') ?? 'room1';
-    _helper.join(room.value, name.value);
+    _ionController.join(room.value, name.value);
   }
 
   _removeAdapter(String mid) {
@@ -252,8 +259,6 @@ class MeetingController extends GetxController {
   }
 
   _cleanUp() async {
-    var ion = _helper.ion;
-
     if (_localVideo != null) {
       await _localStream!.unpublish();
     }
@@ -261,14 +266,12 @@ class MeetingController extends GetxController {
     videoRenderers.value.forEach((item) async {
       var stream = item.stream;
       try {
-        ion?.sfu!.close();
+        _ionController.clientSFU!.close();
         await stream.dispose();
       } catch (error) {}
     });
     videoRenderers.value.clear();
-    await _helper.close();
-
-    Get.back();
+    await _ionController.close();
   }
 
   _showSnackBar(String message) {
@@ -314,7 +317,7 @@ class MeetingController extends GetxController {
               style: TextStyle(color: Colors.red),
             ),
             onPressed: () {
-              Get.back();
+              Get.toNamed("/login");
               _cleanUp();
             },
           )
@@ -324,13 +327,16 @@ class MeetingController extends GetxController {
 
 class BoxSize {
   BoxSize({required this.width, required this.height});
+
   double width;
   double height;
 }
 
 class MeetingView extends GetView<MeetingController> {
-  IonConnector? get ion => controller.ion;
+  IonAppBiz? get ion => controller.ion;
+
   List<VideoRendererAdapter> get remoteVideos => controller._remoteVideos;
+
   VideoRendererAdapter? get localVideo => controller._localVideo;
 
   final double localWidth = 114.0;
@@ -356,7 +362,8 @@ class MeetingView extends GetView<MeetingController> {
           onDoubleTap: () {
             adapter.switchObjFit();
           },
-          child: RTCVideoView(adapter.renderer!, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain));
+          child: RTCVideoView(adapter.renderer!,
+              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain));
     });
   }
 
@@ -400,7 +407,8 @@ class MeetingView extends GetView<MeetingController> {
                 onDoubleTap: () {
                   localVideo?.switchObjFit();
                 },
-                child: RTCVideoView(localVideo!.renderer!, objectFit: localVideo!.objFit)),
+                child: RTCVideoView(localVideo!.renderer!,
+                    objectFit: localVideo!.objFit)),
           ));
     });
   }
@@ -635,12 +643,12 @@ class MeetingView extends GetView<MeetingController> {
                           margin: EdgeInsets.all(0.0),
                           child: Center(
                             child: Obx(() => Text(
-                              'ION Conference [${controller.room.value}]',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18.0,
-                              ),
-                            )),
+                                  'ION Conference [${controller.room.value}]',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18.0,
+                                  ),
+                                )),
                           ),
                         ),
                         Row(
@@ -663,7 +671,7 @@ class MeetingView extends GetView<MeetingController> {
                                 color: Colors.white,
                               ),
                               onPressed: () {
-                                Get.toNamed('/chat');
+                                Get.back();
                               },
                             ),
                           ],

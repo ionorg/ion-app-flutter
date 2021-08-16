@@ -5,15 +5,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class IonController extends GetxController {
   SharedPreferences? _prefs;
-  IonConnector? _ion;
+  IonAppBiz? _ion;
   late String _sid;
   late String _name;
   final String _uid = Uuid().v4();
-  IonConnector? get ion => _ion;
+  Client? clientSFU;
+  GRPCWebSignal? signal;
+
+  IonAppBiz? get ion => _ion;
+
   String get sid => _sid;
+
   String get uid => _uid;
+
   String get name => _name;
-  Client? get sfu => _ion?.sfu;
 
   @override
   void onInit() async {
@@ -28,11 +33,17 @@ class IonController extends GetxController {
     return _prefs!;
   }
 
-  connect(host) async {
+  connectBIZ(host) async {
     if (_ion == null) {
-      var url = 'http://$host:5551';
-      _ion = new IonConnector(url: url);
+      IonBaseConnector _baseConnector = IonBaseConnector(host);
+      _ion = IonAppBiz(_baseConnector);
+      await _ion!.connect();
     }
+  }
+
+  connectSFU(host) async {
+    signal = GRPCWebSignal(host);
+    clientSFU = await Client.create(sid: _sid, uid: _uid, signal: signal!);
   }
 
   join(String sid, String displayName) async {

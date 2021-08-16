@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ion/pages/meeting/meeting_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ion/controllers/ion_controller.dart';
 import 'package:ion/utils/utils.dart';
@@ -8,12 +9,12 @@ class LoginBinding implements Bindings {
   @override
   void dependencies() {
     Get.lazyPut<LoginController>(() => LoginController());
-    Get.lazyPut<IonController>(() => IonController());
+    Get.lazyPut<MeetingController>(() => MeetingController());
   }
 }
 
 class LoginController extends GetxController {
-  final _helper = Get.find<IonController>();
+  final _meetingController = Get.find<MeetingController>();
   late SharedPreferences prefs;
   late var _server = ''.obs;
   late var _sid = ''.obs;
@@ -33,7 +34,7 @@ class LoginController extends GetxController {
     }
     prefs.setString('server', _server.value);
     prefs.setString('room', _sid.value);
-    _helper.connect(_server);
+    _meetingController.connect();
     Get.toNamed('/meeting');
     return true;
   }
