@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ion/pages/meeting/meeting_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ion/controllers/ion_controller.dart';
 import 'package:ion/utils/utils.dart';
 import 'package:get/get.dart';
 

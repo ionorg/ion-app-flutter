@@ -5,20 +5,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class IonController extends GetxController {
   SharedPreferences? _prefs;
-  IonAppBiz? _ion;
   late String _sid;
   late String _name;
   final String _uid = Uuid().v4();
-  Client? clientSFU;
-  GRPCWebSignal? signal;
-
-  IonAppBiz? get ion => _ion;
+  IonBaseConnector? _baseConnector;
+  IonAppBiz? _biz;
+  IonSDKSFU? _sfu;
 
   String get sid => _sid;
 
   String get uid => _uid;
 
   String get name => _name;
+
+  IonAppBiz? get biz => _biz;
+
+  IonSDKSFU? get sfu => _sfu;
 
   @override
   void onInit() async {
@@ -33,28 +35,28 @@ class IonController extends GetxController {
     return _prefs!;
   }
 
-  connectBIZ(host) async {
-    if (_ion == null) {
-      IonBaseConnector _baseConnector = IonBaseConnector(host);
-      _ion = IonAppBiz(_baseConnector);
-      await _ion!.connect();
-    }
+  setup(host) {
+    _baseConnector = new IonBaseConnector(host);
+    _biz = new IonAppBiz(_baseConnector!);
+    _sfu = new IonSDKSFU(_baseConnector!);
   }
 
-  connectSFU(host) async {
-    signal = GRPCWebSignal(host);
-    clientSFU = await Client.create(sid: _sid, uid: _uid, signal: signal!);
+  connect() async {
+    await _biz!.connect();
+    await _sfu!.connect();
   }
 
-  join(String sid, String displayName) async {
-    _sid = sid;
-    _name = displayName;
-    _ion?.join(sid: _sid, uid: _uid, info: {'name': '$displayName'});
+  joinBIZ(String roomID, String displayName) async {
+    _biz!.join(sid: roomID, uid: _uid, info: {'name': '$displayName'});
+  }
+
+  joinSFU(String roomID, String displayName) async {
+    _sfu!.join(roomID, displayName);
   }
 
   close() async {
-    _ion?.leave(_uid);
-    _ion?.close();
-    _ion = null;
+    _biz?.leave(_uid);
+    _biz?.close();
+    _biz = null;
   }
 }

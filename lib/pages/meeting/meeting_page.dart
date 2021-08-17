@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_ion/flutter_ion.dart';
 import 'package:community_material_icon/community_material_icon.dart';
@@ -70,13 +71,32 @@ class MeetingController extends GetxController {
   final videoRenderers = Rx<List<VideoRendererAdapter>>([]);
   LocalStream? _localStream;
 
-  IonAppBiz? get ion => _ionController.ion;
+  IonAppBiz? get biz => _ionController.biz;
+
+  IonSDKSFU? get sfu => _ionController.sfu;
+
   var _cameraOff = false.obs;
   var _microphoneOff = false.obs;
   var _speakerOn = true.obs;
   GlobalKey<ScaffoldState>? _scaffoldkey;
   var name = ''.obs;
   var room = ''.obs;
+
+  @override
+  @mustCallSuper
+  void onInit() async {
+    super.onInit();
+
+    if (biz == null || sfu == null) {
+      print(":::BIZ or SFU is not initialized!:::");
+      print("Goback to /login");
+      SchedulerBinding.instance!.addPostFrameCallback((_) {
+        Get.offNamed('/login');
+        _cleanUp();
+      });
+      return;
+    }
+  }
 
   connect() async {
     _scaffoldkey = GlobalKey();
@@ -87,34 +107,32 @@ class MeetingController extends GetxController {
     //reached via wss. So the address should be for example:
     //https://your-backend-address.com
     var host = prefs.getString('server') ?? '127.0.0.1';
-    var address = 'http://' + host + ':5551';
+    host = 'http://' + host + ':5551';
 
-    //connect to BIZ
-    await _ionController.connectBIZ(address);
+    //init sfu and biz clients
+    _ionController.setup(host);
 
-    ion?.onJoin = (bool success, String reason) async {
+    sfu!.ontrack = (MediaStreamTrack track, RemoteStream stream) async {
+      if (track.kind == 'video') {
+        _addAdapter(
+            await VideoRendererAdapter.create(stream.id, stream.stream, false));
+      }
+    };
+
+    biz?.onJoin = (bool success, String reason) async {
       if (success) {
         try {
+          //join SFU
+          await sfu!.join(room.value, name.value);
+
           var resolution = prefs.getString('resolution') ?? 'hd';
           var codec = prefs.getString('codec') ?? 'vp8';
-
-          //connect to SFU
-          await _ionController.connectSFU(address);
-
-          _ionController.clientSFU!.ontrack =
-              (MediaStreamTrack track, RemoteStream stream) async {
-            if (track.kind == 'video') {
-              _addAdapter(await VideoRendererAdapter.create(
-                  stream.id, stream.stream, false));
-            }
-          };
-
           _localStream = await LocalStream.getUserMedia(
               constraints: Constraints.defaults
                 ..simulcast = false
                 ..resolution = resolution
                 ..codec = codec);
-          _ionController.clientSFU!.publish(_localStream!);
+          sfu!.publish(_localStream!);
           _addAdapter(await VideoRendererAdapter.create(
               _localStream!.stream.id, _localStream!.stream, true));
         } catch (error) {
@@ -124,11 +142,11 @@ class MeetingController extends GetxController {
       this._showSnackBar(":::Join success:::");
     };
 
-    ion?.onLeave = (String reason) {
+    biz?.onLeave = (String reason) {
       this._showSnackBar(":::Leave success:::");
     };
 
-    ion?.onPeerEvent = (PeerEvent event) {
+    biz?.onPeerEvent = (PeerEvent event) {
       var name = event.peer.info['name'];
       var state = '';
       switch (event.state) {
@@ -147,7 +165,7 @@ class MeetingController extends GetxController {
       this._showSnackBar(":::Peer [${event.peer.uid}:$name] $state:::");
     };
 
-    ion?.onStreamEvent = (StreamEvent event) async {
+    biz?.onStreamEvent = (StreamEvent event) async {
       switch (event.state) {
         case StreamState.NONE:
           break;
@@ -167,9 +185,13 @@ class MeetingController extends GetxController {
       }
     };
 
+    //connect to BIZ and SFU
+    await _ionController.connect();
+
+    //join BIZ
     name.value = prefs.getString('display_name') ?? 'Guest';
     room.value = prefs.getString('room') ?? 'room1';
-    _ionController.join(room.value, name.value);
+    _ionController.joinBIZ(room.value, name.value);
   }
 
   _removeAdapter(String mid) {
@@ -262,11 +284,10 @@ class MeetingController extends GetxController {
     if (_localVideo != null) {
       await _localStream!.unpublish();
     }
-
     videoRenderers.value.forEach((item) async {
       var stream = item.stream;
       try {
-        _ionController.clientSFU!.close();
+        sfu!.close();
         await stream.dispose();
       } catch (error) {}
     });
@@ -333,8 +354,6 @@ class BoxSize {
 }
 
 class MeetingView extends GetView<MeetingController> {
-  IonAppBiz? get ion => controller.ion;
-
   List<VideoRendererAdapter> get remoteVideos => controller._remoteVideos;
 
   VideoRendererAdapter? get localVideo => controller._localVideo;

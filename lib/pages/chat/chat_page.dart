@@ -38,7 +38,7 @@ class ChatController extends GetxController {
       );
       _messages.value.insert(0, message);
     }
-    _helper.ion?.onMessage = _messageProcess;
+    _helper.biz?.onMessage = _messageProcess;
   }
 
   void _messageProcess(Message msg) async {
@@ -83,7 +83,7 @@ class ChatController extends GetxController {
       'text': text,
     };
 
-    _helper.ion?.message(_helper.uid, _helper.sid, info);
+    _helper.biz?.message(_helper.uid, _helper.sid, info);
 
     var msg = ChatMessage(
       _helper.uid,
