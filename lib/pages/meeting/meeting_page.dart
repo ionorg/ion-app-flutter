@@ -108,9 +108,12 @@ class MeetingController extends GetxController {
     //https://your-backend-address.com
     var host = prefs.getString('server') ?? '127.0.0.1';
     host = 'http://' + host + ':5551';
+    //join BIZ
+    name.value = prefs.getString('display_name') ?? 'Guest';
+    room.value = prefs.getString('room') ?? 'room1';
 
     //init sfu and biz clients
-    _ionController.setup(host);
+    _ionController.setup(host: host, name: name.value, room: room.value);
 
     sfu!.ontrack = (MediaStreamTrack track, RemoteStream stream) async {
       if (track.kind == 'video') {
@@ -123,7 +126,7 @@ class MeetingController extends GetxController {
       if (success) {
         try {
           //join SFU
-          await sfu!.join(room.value, name.value);
+          await _ionController.joinSFU();
 
           var resolution = prefs.getString('resolution') ?? 'hd';
           var codec = prefs.getString('codec') ?? 'vp8';
@@ -188,10 +191,7 @@ class MeetingController extends GetxController {
     //connect to BIZ and SFU
     await _ionController.connect();
 
-    //join BIZ
-    name.value = prefs.getString('display_name') ?? 'Guest';
-    room.value = prefs.getString('room') ?? 'room1';
-    _ionController.joinBIZ(room.value, name.value);
+    _ionController.joinBIZ();
   }
 
   _removeAdapter(String mid) {

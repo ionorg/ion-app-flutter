@@ -169,10 +169,11 @@ class SettingsView extends GetView<SettingsController> {
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(4.0, 0.0, 4.0, 0),
-                          child: Obx( () => _buildRowFixTitleRadio(
-                              _codecItems, controller._codec.value, (value) {
-                            controller._codec.value = value;
-                          })),
+                          child: Obx(() => _buildRowFixTitleRadio(
+                                  _codecItems, controller._codec.value,
+                                  (value) {
+                                controller._codec.value = value;
+                              })),
                         ),
                       ],
                     ),
@@ -189,10 +190,10 @@ class SettingsView extends GetView<SettingsController> {
                         Padding(
                           padding: const EdgeInsets.fromLTRB(4.0, 0.0, 4.0, 0),
                           child: Obx(() => _buildRowFixTitleRadio(
-                              _resolutionItems, controller._resolution.value,
-                              (value) {
-                            controller._resolution.value = value;
-                          })),
+                                  _resolutionItems,
+                                  controller._resolution.value, (value) {
+                                controller._resolution.value = value;
+                              })),
                         ),
                       ],
                     ),
@@ -209,10 +210,10 @@ class SettingsView extends GetView<SettingsController> {
                         Padding(
                           padding: const EdgeInsets.fromLTRB(4.0, 0.0, 4.0, 0),
                           child: Obx(() => _buildRowFixTitleRadio(
-                              _bandwidthItems, controller._bandwidth.value,
-                              (value) {
-                            controller._bandwidth.value = value;
-                          })),
+                                  _bandwidthItems, controller._bandwidth.value,
+                                  (value) {
+                                controller._bandwidth.value = value;
+                              })),
                         ),
                       ],
                     ),

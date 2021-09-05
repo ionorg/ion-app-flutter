@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: true,
-      unknownRoute: GetPage(name: 'not-found', page: () => NotFound()),
+      unknownRoute: GetPage(name: '/not-found', page: () => NotFound()),
       enableLog: true,
       theme: mDefaultTheme,
       logWriterCallback: Logger.write,

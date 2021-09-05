@@ -35,10 +35,15 @@ class IonController extends GetxController {
     return _prefs!;
   }
 
-  setup(host) {
+  setup(
+      {required String host,
+      required String room,
+      required String name}) async {
     _baseConnector = new IonBaseConnector(host);
     _biz = new IonAppBiz(_baseConnector!);
     _sfu = new IonSDKSFU(_baseConnector!);
+    _sid = room;
+    _name = name;
   }
 
   connect() async {
@@ -46,12 +51,12 @@ class IonController extends GetxController {
     await _sfu!.connect();
   }
 
-  joinBIZ(String roomID, String displayName) async {
-    _biz!.join(sid: roomID, uid: _uid, info: {'name': '$displayName'});
+  joinBIZ() async {
+    _biz!.join(sid: _sid, uid: _uid, info: {'name': '$_name'});
   }
 
-  joinSFU(String roomID, String displayName) async {
-    _sfu!.join(roomID, displayName);
+  joinSFU() async {
+    _sfu!.join(_sid, _uid);
   }
 
   close() async {
