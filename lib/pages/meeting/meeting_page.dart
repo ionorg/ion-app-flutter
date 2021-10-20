@@ -71,24 +71,24 @@ class MeetingController extends GetxController {
   final videoRenderers = Rx<List<VideoRendererAdapter>>([]);
   LocalStream? _localStream;
 
-  IonAppBiz? get biz => _ionController.biz;
+  Room? get room => _ionController.room;
 
-  IonSDKSFU? get sfu => _ionController.sfu;
+  RTC? get rtc => _ionController.rtc;
 
   var _cameraOff = false.obs;
   var _microphoneOff = false.obs;
   var _speakerOn = true.obs;
   GlobalKey<ScaffoldState>? _scaffoldkey;
   var name = ''.obs;
-  var room = ''.obs;
+  var rid = ''.obs;
 
   @override
   @mustCallSuper
   void onInit() async {
     super.onInit();
 
-    if (biz == null || sfu == null) {
-      print(":::BIZ or SFU is not initialized!:::");
+    if (room == null || rtc == null) {
+      print(":::ROOM or SFU is not initialized!:::");
       print("Goback to /login");
       SchedulerBinding.instance!.addPostFrameCallback((_) {
         Get.offNamed('/login');
@@ -108,49 +108,47 @@ class MeetingController extends GetxController {
     //https://your-backend-address.com
     var host = prefs.getString('server') ?? '127.0.0.1';
     host = 'http://' + host + ':5551';
-    //join BIZ
+    //join room
     name.value = prefs.getString('display_name') ?? 'Guest';
-    room.value = prefs.getString('room') ?? 'room1';
+    rid.value = prefs.getString('room') ?? 'room1';
 
     //init sfu and biz clients
-    _ionController.setup(host: host, name: name.value, room: room.value);
+    _ionController.setup(host: host, name: name.value, room: rid.value);
 
-    sfu!.ontrack = (MediaStreamTrack track, RemoteStream stream) async {
+    rtc!.ontrack = (MediaStreamTrack track, RemoteStream stream) async {
       if (track.kind == 'video') {
         _addAdapter(
             await VideoRendererAdapter.create(stream.id, stream.stream, false));
       }
     };
 
-    biz?.onJoin = (bool success, String reason) async {
-      if (success) {
-        try {
-          //join SFU
-          await _ionController.joinSFU();
+    room?.onJoin = (JoinResult) async {
+      try {
+        //join SFU
+        await _ionController.joinRTC();
 
-          var resolution = prefs.getString('resolution') ?? 'hd';
-          var codec = prefs.getString('codec') ?? 'vp8';
-          _localStream = await LocalStream.getUserMedia(
-              constraints: Constraints.defaults
-                ..simulcast = false
-                ..resolution = resolution
-                ..codec = codec);
-          sfu!.publish(_localStream!);
-          _addAdapter(await VideoRendererAdapter.create(
-              _localStream!.stream.id, _localStream!.stream, true));
-        } catch (error) {
-          print('publish err ${error.toString()}');
-        }
+        var resolution = prefs.getString('resolution') ?? 'hd';
+        var codec = prefs.getString('codec') ?? 'vp8';
+        _localStream = await LocalStream.getUserMedia(
+            constraints: Constraints.defaults
+              ..simulcast = false
+              ..resolution = resolution
+              ..codec = codec);
+        rtc!.publish(_localStream!);
+        _addAdapter(await VideoRendererAdapter.create(
+            _localStream!.stream.id, _localStream!.stream, true));
+      } catch (error) {
+        print('publish err ${error.toString()}');
       }
       this._showSnackBar(":::Join success:::");
     };
 
-    biz?.onLeave = (String reason) {
+    room?.onLeave = (String reason) {
       this._showSnackBar(":::Leave success:::");
     };
 
-    biz?.onPeerEvent = (PeerEvent event) {
-      var name = event.peer.info['name'];
+    room?.onPeerEvent = (PeerEvent event) {
+      var name = event.peer.displayname;
       var state = '';
       switch (event.state) {
         case PeerState.NONE:
@@ -168,21 +166,25 @@ class MeetingController extends GetxController {
       this._showSnackBar(":::Peer [${event.peer.uid}:$name] $state:::");
     };
 
-    biz?.onStreamEvent = (StreamEvent event) async {
+    rtc?.ontrackevent = (TrackEvent event) async {
       switch (event.state) {
-        case StreamState.NONE:
-          break;
-        case StreamState.ADD:
-          if (event.streams.isNotEmpty) {
-            var mid = event.streams[0].id;
-            this._showSnackBar(":::stream-add [$mid]:::");
+        case TrackState.ADD:
+          if (event.tracks.isNotEmpty) {
+            var id = event.tracks[0].id;
+            this._showSnackBar(":::track-add [$id]:::");
           }
           break;
-        case StreamState.REMOVE:
-          if (event.streams.isNotEmpty) {
-            var mid = event.streams[0].id;
-            this._showSnackBar(":::stream-remove [$mid]:::");
-            _removeAdapter(mid);
+        case TrackState.REMOVE:
+          if (event.tracks.isNotEmpty) {
+            var id = event.tracks[0].id;
+            this._showSnackBar(":::track-remove [$id]:::");
+            _removeAdapter(id);
+          }
+          break;
+        case TrackState.UPDATE:
+          if (event.tracks.isNotEmpty) {
+            var id = event.tracks[0].id;
+            this._showSnackBar(":::track-update [$id]:::");
           }
           break;
       }
@@ -191,7 +193,7 @@ class MeetingController extends GetxController {
     //connect to BIZ and SFU
     await _ionController.connect();
 
-    _ionController.joinBIZ();
+    _ionController.joinROOM();
   }
 
   _removeAdapter(String mid) {
@@ -287,7 +289,7 @@ class MeetingController extends GetxController {
     videoRenderers.value.forEach((item) async {
       var stream = item.stream;
       try {
-        sfu!.close();
+        rtc!.close();
         await stream.dispose();
       } catch (error) {}
     });
@@ -662,7 +664,7 @@ class MeetingView extends GetView<MeetingController> {
                           margin: EdgeInsets.all(0.0),
                           child: Center(
                             child: Obx(() => Text(
-                                  'ION Conference [${controller.room.value}]',
+                                  'ION Conference [${controller.rid.value}]',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 18.0,
