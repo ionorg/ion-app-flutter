@@ -39,24 +39,35 @@ class IonController extends GetxController {
       {required String host,
       required String room,
       required String name}) async {
+    print('IonController setup');
     _connector = new Connector(host);
     _room = new Room(_connector!);
     _rtc = new RTC(_connector!);
     _sid = room;
     _name = name;
+    print('IonController setup ok');
   }
 
   connect() async {
     await _room!.connect();
     await _rtc!.connect();
+    print('IonController connect()');
   }
 
   joinROOM() async {
-    // _room!.join(sid: _sid, uid: _uid, info: {'name': '$_name'});
     _room!.join(
         peer: Peer()
           ..sid = _sid
-          ..uid = _uid);
+          ..uid = _uid
+          ..displayname = _uid
+          ..extrainfo = []
+          ..destination = ''
+          ..role = Role.HOST
+          ..direction = Direction.BILATERAL
+          ..protocol = Protocol.WEBRTC
+          ..avatar = ''
+          ..vendor = '');
+    print('joinROOM ' + 'sid=' + sid + ' uid=' + uid);
   }
 
   joinRTC() async {
