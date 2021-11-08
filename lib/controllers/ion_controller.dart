@@ -8,9 +8,9 @@ class IonController extends GetxController {
   late String _sid;
   late String _name;
   final String _uid = Uuid().v4();
-  IonBaseConnector? _baseConnector;
-  IonAppBiz? _biz;
-  IonSDKSFU? _sfu;
+  Connector? _connector;
+  Room? _room;
+  RTC? _rtc;
 
   String get sid => _sid;
 
@@ -18,9 +18,9 @@ class IonController extends GetxController {
 
   String get name => _name;
 
-  IonAppBiz? get biz => _biz;
+  Room? get room => _room;
 
-  IonSDKSFU? get sfu => _sfu;
+  RTC? get rtc => _rtc;
 
   @override
   void onInit() async {
@@ -39,29 +39,44 @@ class IonController extends GetxController {
       {required String host,
       required String room,
       required String name}) async {
-    _baseConnector = new IonBaseConnector(host);
-    _biz = new IonAppBiz(_baseConnector!);
-    _sfu = new IonSDKSFU(_baseConnector!);
+    print('IonController setup');
+    _connector = new Connector(host);
+    _room = new Room(_connector!);
+    _rtc = new RTC(_connector!);
     _sid = room;
     _name = name;
+    print('IonController setup ok');
   }
 
   connect() async {
-    await _biz!.connect();
-    await _sfu!.connect();
+    await _room!.connect();
+    await _rtc!.connect();
+    print('IonController connect()');
   }
 
-  joinBIZ() async {
-    _biz!.join(sid: _sid, uid: _uid, info: {'name': '$_name'});
+  joinROOM() async {
+    _room!.join(
+        peer: Peer()
+          ..sid = _sid
+          ..uid = _uid
+          ..displayname = _uid
+          ..extrainfo = []
+          ..destination = ''
+          ..role = Role.HOST
+          ..direction = Direction.BILATERAL
+          ..protocol = Protocol.WEBRTC
+          ..avatar = ''
+          ..vendor = '');
+    print('joinROOM ' + 'sid=' + sid + ' uid=' + uid);
   }
 
-  joinSFU() async {
-    _sfu!.join(_sid, _uid);
+  joinRTC() async {
+    _rtc!.join(_sid, _uid, JoinConfig());
   }
 
   close() async {
-    _biz?.leave(_uid);
-    _biz?.close();
-    _biz = null;
+    _room?.leave(_uid);
+    _room?.close();
+    _room = null;
   }
 }

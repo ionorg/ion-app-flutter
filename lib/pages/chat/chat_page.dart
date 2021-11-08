@@ -38,7 +38,7 @@ class ChatController extends GetxController {
       );
       _messages.value.insert(0, message);
     }
-    _helper.biz?.onMessage = _messageProcess;
+    _helper.room?.onMessage = _messageProcess;
   }
 
   void _messageProcess(Message msg) async {
@@ -46,14 +46,14 @@ class ChatController extends GetxController {
       print('Skip self message');
       return;
     }
-    var info = msg.data;
-    var sender = info['name'];
-    var text = info['text'];
-    var uid = info['uid'] as String;
+    // var info = msg.payload;
+    var sender = msg.from;
+    // var text = info['text'];
+    var uid = msg.from;
     //print('message: sender = ' + sender + ', text = ' + text);
     ChatMessage message = ChatMessage(
       uid,
-      text,
+      "TODO", //TODO come from text var
       sender,
       formatDate(DateTime.now(), [HH, ':', nn, ':', ss]),
       uid == _helper.uid,
@@ -83,7 +83,11 @@ class ChatController extends GetxController {
       'text': text,
     };
 
-    _helper.biz?.message(_helper.uid, _helper.sid, info);
+    _helper.room?.message(Message()
+      ..from = _helper.uid
+      ..to = _helper.uid
+      ..type = 'Map'
+      ..payload = []); //TODO
 
     var msg = ChatMessage(
       _helper.uid,
