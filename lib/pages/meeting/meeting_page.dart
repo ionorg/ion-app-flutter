@@ -6,6 +6,9 @@ import 'package:community_material_icon/community_material_icon.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ion/controllers/ion_controller.dart';
 import 'package:get/get.dart';
+import 'package:ion/utils/utils.dart';
+
+var trackEvent = new TrackEvent();
 
 class MeetingBinding implements Bindings {
   @override
@@ -167,12 +170,20 @@ class MeetingController extends GetxController {
     };
 
     rtc?.ontrackevent = (TrackEvent event) async {
+      print("ontrackevent event.uid=${event.uid}");
+      for (var track in event.tracks) {
+        print(
+            "ontrackevent track.id=${track.id} track.kind=${track.kind} track.layer=${track.layer}");
+      }
       switch (event.state) {
         case TrackState.ADD:
           if (event.tracks.isNotEmpty) {
             var id = event.tracks[0].id;
             this._showSnackBar(":::track-add [$id]:::");
           }
+          print("trackEvent = event");
+          trackEvent = event;
+
           break;
         case TrackState.REMOVE:
           if (event.tracks.isNotEmpty) {
@@ -362,7 +373,7 @@ class MeetingView extends GetView<MeetingController> {
 
   final double localWidth = 114.0;
   final double localHeight = 72.0;
-
+  String dropdownValue = 'Simulcast';
   BoxSize localVideoBoxSize(Orientation orientation) {
     return BoxSize(
       width: (orientation == Orientation.portrait) ? localHeight : localWidth,
@@ -576,6 +587,40 @@ class MeetingView extends GetView<MeetingController> {
           onPressed: controller._hangUp,
         ),
       ),
+      SizedBox(
+          width: 36,
+          height: 36,
+          child: DropdownButton<String>(
+              items: <String>['f', 'h', 'q'].map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? layer) {
+                print(layer);
+                List<Subscription> infos = [];
+                for (var track in trackEvent.tracks) {
+                  print(
+                      "track.id=${track.id} track.kind=${track.kind} track.layer=${track.layer}");
+                  if (layer == track.layer) {
+                    infos.add(Subscription(
+                        trackId: track.id,
+                        mute: false,
+                        subscribe: true,
+                        layer: layer.toString()));
+                  }
+                }
+                for (var i in infos) {
+                  print(
+                      "i.trackId=${i.trackId} i.layer=${i.layer} i.mute=${i.mute} i.subscribe=${i.subscribe}");
+                }
+                Get.find<IonController>().rtc!.subscribe(infos);
+              },
+              icon: Icon(
+                CommunityMaterialIcons.picture_in_picture_top_right_outline,
+                color: Colors.white,
+              ))),
     ];
   }
 

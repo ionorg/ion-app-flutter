@@ -79,4 +79,8 @@ class IonController extends GetxController {
     _room?.close();
     _room = null;
   }
+
+  subscribe(List<Subscription> infos) {
+    _rtc!.subscribe(infos);
+  }
 }
