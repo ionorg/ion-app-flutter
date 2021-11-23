@@ -19,6 +19,7 @@ class SettingsController extends GetxController {
   var _bandwidth = ''.obs;
   var _codec = ''.obs;
   var _displayName = ''.obs;
+  var _simulcast = false.obs;
 
   @override
   @mustCallSuper
@@ -29,6 +30,7 @@ class SettingsController extends GetxController {
     _bandwidth.value = prefs.getString('bandwidth') ?? '512';
     _displayName.value = prefs.getString('display_name') ?? 'Guest';
     _codec.value = prefs.getString('codec') ?? 'vp8';
+    _simulcast.value = prefs.getBool('simulcast') ?? false;
   }
 
   save() {
@@ -36,6 +38,8 @@ class SettingsController extends GetxController {
     prefs.setString('bandwidth', _bandwidth.value);
     prefs.setString('display_name', _displayName.value);
     prefs.setString('codec', _codec.value);
+    prefs.setBool('simulcast', _simulcast.value);
+    print('save simulcast=${_simulcast.value}');
     Get.back();
   }
 }
@@ -155,6 +159,34 @@ class SettingsView extends GetView<SettingsController> {
                             },
                           ),
                         ),
+                      ],
+                    ),
+                    Column(
+                      children: <Widget>[
+                        Padding(
+                          padding:
+                              const EdgeInsets.fromLTRB(46.0, 18.0, 48.0, 0),
+                          child: Align(
+                            child: Text('Simulcast:'),
+                            alignment: Alignment.centerLeft,
+                          ),
+                        ),
+                        Padding(
+                            padding:
+                                const EdgeInsets.fromLTRB(4.0, 0.0, 4.0, 0),
+                            child: StatefulBuilder(builder:
+                                (BuildContext context, StateSetter setState) {
+                              return Center(
+                                child: Checkbox(
+                                  value: controller._simulcast.value,
+                                  onChanged: (bool? value) {
+                                    setState(() {
+                                      controller._simulcast.value = value!;
+                                    });
+                                  },
+                                ),
+                              );
+                            })),
                       ],
                     ),
                     Column(

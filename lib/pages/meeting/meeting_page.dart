@@ -8,8 +8,6 @@ import 'package:ion/controllers/ion_controller.dart';
 import 'package:get/get.dart';
 import 'package:ion/utils/utils.dart';
 
-var trackEvent = new TrackEvent();
-
 class MeetingBinding implements Bindings {
   @override
   void dependencies() {
@@ -84,6 +82,8 @@ class MeetingController extends GetxController {
   GlobalKey<ScaffoldState>? _scaffoldkey;
   var name = ''.obs;
   var rid = ''.obs;
+  var _simulcast = false.obs;
+  TrackEvent? trackEvent = null;
 
   @override
   @mustCallSuper
@@ -126,17 +126,21 @@ class MeetingController extends GetxController {
     };
 
     room?.onJoin = (JoinResult) async {
+      print("room.onJoin");
       try {
         //join SFU
         await _ionController.joinRTC();
 
         var resolution = prefs.getString('resolution') ?? 'hd';
         var codec = prefs.getString('codec') ?? 'vp8';
+        var simulcast = prefs.getBool('simulcast') ?? false;
+        print('simulcast=${simulcast}');
         _localStream = await LocalStream.getUserMedia(
             constraints: Constraints.defaults
-              ..simulcast = false
+              ..simulcast = simulcast
               ..resolution = resolution
-              ..codec = codec);
+              ..codec = codec
+              ..simulcast = simulcast);
         rtc!.publish(_localStream!);
         _addAdapter(await VideoRendererAdapter.create(
             _localStream!.stream.id, _localStream!.stream, true));
@@ -181,15 +185,18 @@ class MeetingController extends GetxController {
             var id = event.tracks[0].id;
             this._showSnackBar(":::track-add [$id]:::");
           }
-          print("trackEvent = event");
-          trackEvent = event;
+
+          if (trackEvent == null) {
+            print("trackEvent == null");
+            trackEvent = event;
+          }
 
           break;
         case TrackState.REMOVE:
           if (event.tracks.isNotEmpty) {
-            var id = event.tracks[0].id;
-            this._showSnackBar(":::track-remove [$id]:::");
-            _removeAdapter(id);
+            var mid = event.tracks[0].stream_id;
+            this._showSnackBar(":::track-remove [$mid]:::");
+            _removeAdapter(mid);
           }
           break;
         case TrackState.UPDATE:
@@ -201,7 +208,7 @@ class MeetingController extends GetxController {
       }
     };
 
-    //connect to BIZ and SFU
+    //connect to room and SFU
     await _ionController.connect();
 
     _ionController.joinROOM();
@@ -506,6 +513,25 @@ class MeetingView extends GetView<MeetingController> {
             ),
           ),
           child: Obx(() => Icon(
+                controller._simulcast.value
+                    ? CommunityMaterialIcons.video_off
+                    : CommunityMaterialIcons.video,
+                color: controller._simulcast.value ? Colors.red : Colors.white,
+              )),
+          onPressed: controller._turnCamera,
+        ),
+      ),
+      SizedBox(
+        width: 36,
+        height: 36,
+        child: RawMaterialButton(
+          shape: CircleBorder(
+            side: BorderSide(
+              color: Colors.white,
+              width: 1,
+            ),
+          ),
+          child: Obx(() => Icon(
                 controller._cameraOff.value
                     ? CommunityMaterialIcons.video_off
                     : CommunityMaterialIcons.video,
@@ -600,10 +626,18 @@ class MeetingView extends GetView<MeetingController> {
               onChanged: (String? layer) {
                 print(layer);
                 List<Subscription> infos = [];
-                for (var track in trackEvent.tracks) {
+                for (var track in controller.trackEvent!.tracks) {
                   print(
                       "track.id=${track.id} track.kind=${track.kind} track.layer=${track.layer}");
-                  if (layer == track.layer) {
+                  if (layer == track.layer && track.kind == 'video') {
+                    infos.add(Subscription(
+                        trackId: track.id,
+                        mute: false,
+                        subscribe: true,
+                        layer: layer.toString()));
+                  }
+
+                  if (track.kind == 'audio') {
                     infos.add(Subscription(
                         trackId: track.id,
                         mute: false,
@@ -611,6 +645,7 @@ class MeetingView extends GetView<MeetingController> {
                         layer: layer.toString()));
                   }
                 }
+
                 for (var i in infos) {
                   print(
                       "i.trackId=${i.trackId} i.layer=${i.layer} i.mute=${i.mute} i.subscribe=${i.subscribe}");
