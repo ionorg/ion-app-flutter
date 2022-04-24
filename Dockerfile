@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 # For Chinese users:
 # Due to the blocking of GFW firewall, please use the mirror address in ubuntu sources and flutter pub repo.
